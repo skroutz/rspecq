@@ -1,0 +1,67 @@
+#!/usr/bin/env ruby
+require "optionparser"
+require "rspecq"
+
+opts = {}
+OptionParser.new do |o|
+  o.banner = "Usage: #{$PROGRAM_NAME} [opts] [files_or_directories_to_run]"
+
+  o.on("--build-id ID", "A unique identifier denoting the build") do |v|
+    opts[:build_id] = v
+  end
+
+  o.on("--worker-id ID", "A unique identifier denoting the worker") do |v|
+    opts[:worker_id] = v
+  end
+
+  o.on("--redis HOST", "Redis HOST to connect to (default: 127.0.0.1)") do |v|
+    opts[:redis_host] = v || "127.0.0.1"
+  end
+
+  o.on("--timings", "Populate global job timings in Redis") do |v|
+    opts[:timings] = v
+  end
+
+  o.on("--file-split-threshold N", "Split spec files slower than N sec. and " \
+       "schedule them by example (default: 999999)") do |v|
+    opts[:file_split_threshold] = Float(v)
+  end
+
+  o.on("--report", "Do not execute tests but wait until queue is empty and " \
+       "print a report") do |v|
+    opts[:report] = v
+  end
+
+  o.on("--report-timeout N", Integer, "Fail if queue is not empty after " \
+       "N seconds. Only applicable if --report is enabled "               \
+       "(default: 3600)") do |v|
+    opts[:report_timeout] = v
+  end
+
+end.parse!
+
+[:build_id, :worker_id].each do |o|
+  raise OptionParser::MissingArgument.new(o) if opts[o].nil?
+end
+
+if opts[:report]
+  reporter = RSpecQ::Reporter.new(
+    build_id: opts[:build_id],
+    worker_id: opts[:worker_id],
+    timeout: opts[:report_timeout] || 3600,
+    redis_host: opts[:redis_host],
+  )
+
+  reporter.report
+else
+  worker = RSpecQ::Worker.new(
+    build_id: opts[:build_id],
+    worker_id: opts[:worker_id],
+    redis_host: opts[:redis_host],
+    files_or_dirs_to_run: ARGV[0] || "spec",
+  )
+
+  worker.populate_timings = opts[:timings]
+  worker.file_split_threshold = opts[:file_split_threshold] || 999999
+  worker.work
+end
