@@ -12,6 +12,7 @@ Gem::Specification.new do |s|
   s.license     = "MIT"
 
   s.add_dependency "rspec-core"
+  s.add_dependency "redis"
 
   s.add_development_dependency "minitest", "~> 5.14"
   s.add_development_dependency "rake"
