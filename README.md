@@ -8,6 +8,8 @@ and [ci-queue](https://github.com/Shopify/ci-queue).
 
 ## Why don't you just use ci-queue?
 
+**Update**: ci-queue [deprecated support for RSpec](https://github.com/Shopify/ci-queue/pull/149).
+
 While evaluating ci-queue for our RSpec suite, we observed slow boot times
 in the workers (up to 3 minutes), increased memory consumption and too much
 disk I/O on boot. This is due to the fact that a worker in ci-queue has to
@@ -32,7 +34,7 @@ on every run (if the `--timings` option was used). Also, RSpecQ has a "slow
 file threshold" which, currently has to be set manually (but this can be
 improved).
 
-*Update*: ci-queue deprecated support for RSpec, so there's that.
+
 
 ## Usage
 
