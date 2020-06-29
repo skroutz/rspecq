@@ -1,31 +1,29 @@
 # RSpecQ
 
-RSpecQ (`rspecq`) distributes and executes an RSpec suite over many workers,
-using a centralized queue backed by Redis.
+RSpecQ distributes and executes an RSpec suite over many workers,
+using a centralized queue.
 
 RSpecQ is heavily inspired by [test-queue](https://github.com/tmm1/test-queue)
 and [ci-queue](https://github.com/Shopify/ci-queue).
 
-## Why don't you just use ci-queue?
+## Rationale
+
+### Why didn't you use ci-queue?
 
 **Update**: ci-queue [deprecated support for RSpec](https://github.com/Shopify/ci-queue/pull/149).
 
-While evaluating ci-queue for our RSpec suite, we observed slow boot times
-in the workers (up to 3 minutes), increased memory consumption and too much
-disk I/O on boot. This is due to the fact that a worker in ci-queue has to
-load every spec file on boot. This can be problematic for applications with
-a large number of spec files.
+While evaluating ci-queue for our RSpec suite, we experienced slow worker boot times (up to 3 minutes in some cases) combined with disk saturation and increased memory consumption. This is due to the fact that a worker in ci-queue has to
+load every spec file on boot. In applications with
+a large number of spec files this may result in a significant performance hit and in case of cloud environments increased billings. 
 
 RSpecQ works with spec files as its unit of work (as opposed to ci-queue which
-works with individual examples). This means that an RSpecQ worker does not
-have to load all spec files at once and so it doesn't have the aforementioned
-problems. It also allows suites to keep using `before(:all)` hooks
+works with individual examples). This means that an RSpecQ worker only loads a file when it's needed and each worker only loads a subset of all files. Additionally this allows suites to keep using `before(:all)` hooks
 (which ci-queue explicitly rejects). (Note: RSpecQ also schedules individual
 examples, but only when this is deemed necessary, see section
 "Spec file splitting").
 
 We also observed faster build times by scheduling spec files instead of
-individual examples, due to way less Redis operations.
+individual examples, probably due to decreased Redis operations.
 
 The downside of this design is that it's more complicated, since the scheduling
 of spec files happens based on timings calculated from previous runs. This
