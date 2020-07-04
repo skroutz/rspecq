@@ -3,52 +3,84 @@ require "optparse"
 require "rspecq"
 
 opts = {}
-OptionParser.new do |o|
-  o.banner = "Usage: #{$PROGRAM_NAME} [opts] [files_or_directories_to_run]"
+name = File.basename($PROGRAM_NAME)
 
-  o.on("--build-id ID", "A unique identifier denoting the build") do |v|
+DEFAULT_REDIS_HOST = "127.0.0.1"
+DEFAULT_REPORT_TIMEOUT = 3600
+DEFAULT_FILE_SPLIT_THRESHOLD = 999999
+
+OptionParser.new do |o|
+  o.banner = <<~BANNER
+    NAME:
+        #{name} - Optimally distribute and run RSpec suites among parallel workers
+
+    USAGE:
+        #{name} [<options>] [spec files or directories]
+  BANNER
+
+  o.separator ""
+	o.separator "OPTIONS:"
+
+  o.on("-b", "--build ID", "A unique identifier denoting the CI build") do |v|
     opts[:build_id] = v
   end
 
-  o.on("--worker-id ID", "A unique identifier denoting the worker") do |v|
+  o.on("-w", "--worker ID", "A unique identifier for this worker") do |v|
     opts[:worker_id] = v
   end
 
-  o.on("--redis HOST", "Redis HOST to connect to (default: 127.0.0.1)") do |v|
-    opts[:redis_host] = v || "127.0.0.1"
+  o.on("-r", "--redis HOST", "Redis host to connect to (default: #{DEFAULT_REDIS_HOST})") do |v|
+    opts[:redis_host] = v || DEFAULT_REDIS_HOST
   end
 
-  o.on("--timings", "Populate global job timings in Redis") do |v|
+  o.on("--timings", "Update the global job timings key") do |v|
     opts[:timings] = v
   end
 
-  o.on("--file-split-threshold N", "Split spec files slower than N sec. and " \
-       "schedule them by example (default: 999999)") do |v|
-    opts[:file_split_threshold] = Float(v)
+  o.on("--file-split-threshold N", Integer, "Split spec files slower than N " \
+       "seconds and schedule them as individual examples "                    \
+       "(default: #{DEFAULT_FILE_SPLIT_THRESHOLD})") do |v|
+    opts[:file_split_threshold] = v
   end
 
-  o.on("--report", "Do not execute tests but wait until queue is empty and " \
-       "print a report") do |v|
+  o.on("--report", "Enable reporter mode: do not pull tests off the queue; " \
+                   "instead print build progress and exit when it's "        \
+                   "finished.\n#{o.summary_indent*9} "                       \
+                   "Exits with a non-zero status code if the build failed") do |v|
     opts[:report] = v
   end
 
-  o.on("--report-timeout N", Integer, "Fail if queue is not empty after " \
-       "N seconds. Only applicable if --report is enabled "               \
-       "(default: 3600)") do |v|
+  o.on("--report-timeout N", Integer, "Implies --report. Fail if build is " \
+       "not finished after N seconds (default: #{DEFAULT_REPORT_TIMEOUT})") do |v|
+    opts[:report] = true
     opts[:report_timeout] = v
   end
 
+  o.on_tail("-h", "--help", "Show this message") do
+    puts o
+    exit
+  end
+
+  o.on_tail("-v", "--version", "Print the version and exit") do
+    puts "#{name} #{RSpecQ::VERSION}"
+    exit
+  end
 end.parse!
 
 [:build_id, :worker_id].each do |o|
   raise OptionParser::MissingArgument.new(o) if opts[o].nil?
 end
 
+if opts[:report] && (opts[:timings] || opts[:file_split_threshold])
+  abort "--report and --report-timeout cannot be used together with " \
+        "--timings or --file-split-threshold"
+end
+
 if opts[:report]
   reporter = RSpecQ::Reporter.new(
     build_id: opts[:build_id],
     worker_id: opts[:worker_id],
-    timeout: opts[:report_timeout] || 3600,
+    timeout: opts[:report_timeout] || DEFAULT_REPORT_TIMEOUT,
     redis_host: opts[:redis_host],
   )
 
@@ -61,7 +93,7 @@ else
     files_or_dirs_to_run: ARGV[0] || "spec",
   )
 
-  worker.populate_timings = opts[:timings]
-  worker.file_split_threshold = opts[:file_split_threshold] || 999999
+  worker.populate_timings = !!opts[:timings]
+  worker.file_split_threshold = opts[:file_split_threshold] || DEFAULT_FILE_SPLIT_THRESHOLD
   worker.work
 end
