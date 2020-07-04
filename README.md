@@ -1,7 +1,6 @@
 # RSpecQ
 
-RSpecQ distributes and executes an RSpec suite over many workers,
-using a centralized queue.
+RSpecQ (RSpec Queue) distributes and executes RSpec suites among parallel workers. It uses a centralized queue that workers connect to and pop off tests from. It ensures optimal scheduling of tests, facilitating faster CI builds.
 
 RSpecQ is heavily inspired by [test-queue](https://github.com/tmm1/test-queue)
 and [ci-queue](https://github.com/Shopify/ci-queue).
@@ -54,7 +53,7 @@ For detailed info use `--help`.
 
 ## How it works
 
-The basic idea is identical to ci-queue so please refer to its README
+The core design is identical to ci-queue so please refer to its [README](https://github.com/Shopify/ci-queue/blob/master/README.md) instead.
 
 ### Terminology
 
