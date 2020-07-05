@@ -2,14 +2,18 @@
 require "optparse"
 require "rspecq"
 
-opts = {}
-name = File.basename($PROGRAM_NAME)
-
 DEFAULT_REDIS_HOST = "127.0.0.1"
-DEFAULT_REPORT_TIMEOUT = 3600
-DEFAULT_FILE_SPLIT_THRESHOLD = 999999
+DEFAULT_REPORT_TIMEOUT = 3600 # 1 hour
+
+def env_set?(var)
+  ["1", "true"].include?(ENV[var])
+end
+
+opts = {}
 
 OptionParser.new do |o|
+  name = File.basename($PROGRAM_NAME)
+
   o.banner = <<~BANNER
     NAME:
         #{name} - Optimally distribute and run RSpec suites among parallel workers
@@ -22,37 +26,38 @@ OptionParser.new do |o|
 	o.separator "OPTIONS:"
 
   o.on("-b", "--build ID", "A unique identifier denoting the CI build") do |v|
-    opts[:build_id] = v
+    opts[:build] = v
   end
 
   o.on("-w", "--worker ID", "A unique identifier for this worker") do |v|
-    opts[:worker_id] = v
+    opts[:worker] = v
   end
 
   o.on("-r", "--redis HOST", "Redis host to connect to (default: #{DEFAULT_REDIS_HOST})") do |v|
-    opts[:redis_host] = v || DEFAULT_REDIS_HOST
+    opts[:redis_host] = v
   end
 
-  o.on("--timings", "Update the global job timings key") do |v|
+  o.on("--update-timings", "Update the global job timings key based on " \
+       "the timings of this build") do |v|
     opts[:timings] = v
   end
 
   o.on("--file-split-threshold N", Integer, "Split spec files slower than N " \
-       "seconds and schedule them as individual examples "                    \
-       "(default: #{DEFAULT_FILE_SPLIT_THRESHOLD})") do |v|
+       "seconds and schedule them as individual examples") do |v|
     opts[:file_split_threshold] = v
   end
 
   o.on("--report", "Enable reporter mode: do not pull tests off the queue; " \
                    "instead print build progress and exit when it's "        \
                    "finished.\n#{o.summary_indent*9} "                       \
-                   "Exits with a non-zero status code if the build failed") do |v|
+                   "Exits with a non-zero status code if there were any "    \
+                   "failures") do |v|
     opts[:report] = v
   end
 
-  o.on("--report-timeout N", Integer, "Implies --report. Fail if build is " \
-       "not finished after N seconds (default: #{DEFAULT_REPORT_TIMEOUT})") do |v|
-    opts[:report] = true
+  o.on("--report-timeout N", Integer, "Fail if build is not finished after " \
+       "N seconds. Only applicable if --report is enabled "                  \
+       "(default: #{DEFAULT_REPORT_TIMEOUT})") do |v|
     opts[:report_timeout] = v
   end
 
@@ -67,33 +72,41 @@ OptionParser.new do |o|
   end
 end.parse!
 
-[:build_id, :worker_id].each do |o|
+opts[:build] ||= ENV["RSPECQ_BUILD"]
+opts[:worker] ||= ENV["RSPECQ_WORKER"]
+opts[:redis_host] ||= ENV["RSPECQ_REDIS"] || DEFAULT_REDIS_HOST
+opts[:timings] ||= env_set?("RSPECQ_UPDATE_TIMINGS")
+opts[:file_split_threshold] ||= Integer(ENV["RSPECQ_FILE_SPLIT_THRESHOLD"] || 9999999)
+opts[:report] ||= env_set?("RSPECQ_REPORT")
+opts[:report_timeout] ||= Integer(ENV["RSPECQ_REPORT_TIMEOUT"] || DEFAULT_REPORT_TIMEOUT)
+
+[:build, :worker].each do |o|
   raise OptionParser::MissingArgument.new(o) if opts[o].nil?
 end
 
 if opts[:report] && (opts[:timings] || opts[:file_split_threshold])
-  abort "--report and --report-timeout cannot be used together with " \
-        "--timings or --file-split-threshold"
+  puts "WARNING: --timings and --file-split-threshold cannot be used together " \
+       "with --report or --report-timeout"
 end
 
 if opts[:report]
   reporter = RSpecQ::Reporter.new(
-    build_id: opts[:build_id],
-    worker_id: opts[:worker_id],
-    timeout: opts[:report_timeout] || DEFAULT_REPORT_TIMEOUT,
+    build_id: opts[:build],
+    worker_id: opts[:worker],
+    timeout: opts[:report_timeout],
     redis_host: opts[:redis_host],
   )
 
   reporter.report
 else
   worker = RSpecQ::Worker.new(
-    build_id: opts[:build_id],
-    worker_id: opts[:worker_id],
+    build_id: opts[:build],
+    worker_id: opts[:worker],
     redis_host: opts[:redis_host],
     files_or_dirs_to_run: ARGV[0] || "spec",
   )
 
-  worker.populate_timings = !!opts[:timings]
-  worker.file_split_threshold = opts[:file_split_threshold] || DEFAULT_FILE_SPLIT_THRESHOLD
+  worker.populate_timings = opts[:timings]
+  worker.file_split_threshold = opts[:file_split_threshold]
   worker.work
 end
