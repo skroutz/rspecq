@@ -3,7 +3,8 @@ require_relative "lib/rspecq/version"
 Gem::Specification.new do |s|
   s.name        = "rspecq"
   s.version     = RSpecQ::VERSION
-  s.summary     = "Distribute an RSpec suite among many workers"
+  s.summary     = "Optimally distribute and run RSpec suites among parallel " \
+                  "workers; for faster CI builds"
   s.authors     = "Agis Anastasopoulos"
   s.email       = "agis.anast@gmail.com"
   s.files       = Dir["lib/**/*", "CHANGELOG.md", "LICENSE", "Rakefile", "README.md"]
