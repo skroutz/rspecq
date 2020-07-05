@@ -80,19 +80,12 @@ opts[:file_split_threshold] ||= Integer(ENV["RSPECQ_FILE_SPLIT_THRESHOLD"] || 99
 opts[:report] ||= env_set?("RSPECQ_REPORT")
 opts[:report_timeout] ||= Integer(ENV["RSPECQ_REPORT_TIMEOUT"] || DEFAULT_REPORT_TIMEOUT)
 
-[:build, :worker].each do |o|
-  raise OptionParser::MissingArgument.new(o) if opts[o].nil?
-end
-
-if opts[:report] && (opts[:timings] || opts[:file_split_threshold])
-  puts "WARNING: --timings and --file-split-threshold cannot be used together " \
-       "with --report or --report-timeout"
-end
+raise OptionParser::MissingArgument.new(:build) if opts[:build].nil?
+raise OptionParser::MissingArgument.new(:worker) if !opts[:report] && opts[:worker].nil?
 
 if opts[:report]
   reporter = RSpecQ::Reporter.new(
     build_id: opts[:build],
-    worker_id: opts[:worker],
     timeout: opts[:report_timeout],
     redis_host: opts[:redis_host],
   )

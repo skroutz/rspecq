@@ -1,59 +1,55 @@
 # RSpecQ
 
-RSpecQ (RSpec Queue) distributes and executes RSpec suites among parallel workers. It uses a centralized queue that workers connect to and pop off tests from. It ensures optimal scheduling of tests, facilitating faster CI builds.
+RSpecQ (RSpec Queue) distributes and executes RSpec suites among parallel
+workers. It uses a centralized queue that workers connect to and pop off
+tests from. It ensures optimal scheduling of tests based on their run time,
+facilitating faster CI builds.
 
 RSpecQ is heavily inspired by [test-queue](https://github.com/tmm1/test-queue)
-and [ci-queue](https://github.com/Shopify/ci-queue).
-
-## Rationale
-
-### Why didn't you use ci-queue?
-
-**Update**: ci-queue [deprecated support for RSpec](https://github.com/Shopify/ci-queue/pull/149).
-
-While evaluating ci-queue for our RSpec suite, we experienced slow worker boot times (up to 3 minutes in some cases) combined with disk saturation and increased memory consumption. This is due to the fact that a worker in ci-queue has to
-load every spec file on boot. In applications with
-a large number of spec files this may result in a significant performance hit and in case of cloud environments increased billings. 
-
-RSpecQ works with spec files as its unit of work (as opposed to ci-queue which
-works with individual examples). This means that an RSpecQ worker only loads a file when it's needed and each worker only loads a subset of all files. Additionally this allows suites to keep using `before(:all)` hooks
-(which ci-queue explicitly rejects). (Note: RSpecQ also schedules individual
-examples, but only when this is deemed necessary, see section
-"Spec file splitting").
-
-We also observed faster build times by scheduling spec files instead of
-individual examples, probably due to decreased Redis operations.
-
-The downside of this design is that it's more complicated, since the scheduling
-of spec files happens based on timings calculated from previous runs. This
-means that RSpecQ maintains a key with the timing of each job and updates it
-on every run (if the `--timings` option was used). Also, RSpecQ has a "slow
-file threshold" which, currently has to be set manually (but this can be
-improved).
-
-
+and even more by [ci-queue](https://github.com/Shopify/ci-queue).
 
 ## Usage
 
-Each worker needs to know the build it will participate in, its name and where
-Redis is located. To start a worker:
+Each worker needs to be given the build it will participate in, a name and the
+Redis hostname. To start a worker:
 
 ```shell
-$ rspecq --build-id=foo --worker-id=worker1 --redis=redis://localhost
+$ rspecq --build=123 --worker=foo1 --redis=localhost spec
 ```
 
-To view the progress of the build print use `--report`:
+To view the progress of the build use `--report`:
 
 ```shell
-$ rspecq --build-id=foo --worker-id=reporter --redis=redis://localhost --report
+$ rspecq --build=123 --redis=localhost --report
 ```
 
-For detailed info use `--help`.
+For detailed info use `--help`:
+
+```
+NAME:
+    rspecq - Optimally distribute and run RSpec suites among parallel workers
+
+USAGE:
+    rspecq [<options>] [spec files or directories]
+
+OPTIONS:
+    -b, --build ID                   A unique identifier denoting the CI build
+    -w, --worker ID                  A unique identifier for this worker
+    -r, --redis HOST                 Redis host to connect to (default: 127.0.0.1)
+        --update-timings             Update the global job timings key based on the timings of this build
+        --file-split-threshold N     Split spec files slower than N seconds and schedule them as individual examples
+        --report                     Enable reporter mode: do not pull tests off the queue; instead print build progress and exit when it's finished.
+                                     Exits with a non-zero status code if there were any failures
+        --report-timeout N           Fail if build is not finished after N seconds. Only applicable if --report is enabled (default: 3600)
+    -h, --help                       Show this message
+    -v, --version                    Print the version and exit
+```
 
 
 ## How it works
 
-The core design is identical to ci-queue so please refer to its [README](https://github.com/Shopify/ci-queue/blob/master/README.md) instead.
+The core design is identical to ci-queue so please refer to its
+[README](https://github.com/Shopify/ci-queue/blob/master/README.md) instead.
 
 ### Terminology
 
@@ -95,7 +91,37 @@ that they're fine and performing jobs. If a worker hasn't reported for
 a given amount of time (see `WORKER_LIVENESS_SEC`) it is considered dead
 and the job it reserved will be requeued, so that it is picked up by another worker.
 
-This protects us against unrecoverable worker failures (e.g. segfault).
+This protects us against unrecoverable worker failures
+(e.g. a segmentation fault in MRI).
+
+## Rationale
+
+### Why didn't you use ci-queue?
+
+**Update**: ci-queue [deprecated support for RSpec](https://github.com/Shopify/ci-queue/pull/149).
+
+While evaluating ci-queue for our RSpec suite, we experienced slow worker boot times (up to 3 minutes in some cases) combined with disk saturation and increased memory consumption. This is due to the fact that a worker in ci-queue has to
+load every spec file on boot. In applications with
+a large number of spec files this may result in a significant performance hit and in case of cloud environments increased billings. 
+
+RSpecQ works with spec files as its unit of work (as opposed to ci-queue which
+works with individual examples). This means that an RSpecQ worker only loads a file when it's needed and each worker only loads a subset of all files. Additionally this allows suites to keep using `before(:all)` hooks
+(which ci-queue explicitly rejects). (Note: RSpecQ also schedules individual
+examples, but only when this is deemed necessary, see section
+"Spec file splitting").
+
+We also observed faster build times by scheduling spec files instead of
+individual examples, probably due to decreased Redis operations.
+
+The downside of this design is that it's more complicated, since the scheduling
+of spec files happens based on timings calculated from previous runs. This
+means that RSpecQ maintains a key with the timing of each job and updates it
+on every run (if the `--timings` option was used). Also, RSpecQ has a "slow
+file threshold" which, currently has to be set manually (but this can be
+improved).
+
+
+
 
 ## License
 
