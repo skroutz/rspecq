@@ -111,14 +111,14 @@ examples, but only when this is deemed necessary, see section
 "Spec file splitting").
 
 We also observed faster build times by scheduling spec files instead of
-individual examples, probably due to decreased Redis operations.
+individual examples, probably due to way less Redis operations and due to big differences in runtimes between individual examples (which is common in big RSpec suites).
 
 The downside of this design is that it's more complicated, since the scheduling
 of spec files happens based on timings calculated from previous runs. This
 means that RSpecQ maintains a key with the timing of each job and updates it
 on every run (if the `--timings` option was used). Also, RSpecQ has a "slow
 file threshold" which, currently has to be set manually (but this can be
-improved).
+improved in the future).
 
 
 
