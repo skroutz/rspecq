@@ -57,6 +57,8 @@ module RSpecQ
     STATUS_INITIALIZING = "initializing".freeze
     STATUS_READY = "ready".freeze
 
+    attr_reader :redis
+
     def initialize(build_id, worker_id, redis_host)
       @build_id = build_id
       @worker_id = worker_id
@@ -157,6 +159,14 @@ module RSpecQ
       @redis.scard(key_queue_processed)
     end
 
+    def processed_jobs
+      @redis.smembers(key_queue_processed)
+    end
+
+    def requeued_jobs
+      @redis.hgetall(key_requeues)
+    end
+
     def become_master
       @redis.setnx(key_queue_status, STATUS_INITIALIZING)
     end
@@ -198,6 +208,12 @@ module RSpecQ
 
     def build_successful?
       exhausted? && example_failures.empty? && non_example_errors.empty?
+    end
+
+    # The remaining jobs to be processed. Jobs at the head of the list will
+    # be procesed first.
+    def unprocessed_jobs
+      @redis.lrange(key_queue_unprocessed, 0, -1)
     end
 
     private
