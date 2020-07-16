@@ -152,7 +152,7 @@ module RSpecQ
     end
 
     def example_count
-      @redis.get(key_example_count) || 0
+      @redis.get(key_example_count).to_i
     end
 
     def processed_jobs_count
