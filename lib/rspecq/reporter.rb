@@ -11,7 +11,7 @@ module RSpecQ
     end
 
     def report
-      t = measure_duration { @queue.wait_until_published }
+      @queue.wait_until_published
 
       finished = false
 
