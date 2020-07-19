@@ -23,6 +23,7 @@ module RSpecQ
       @files_or_dirs_to_run = files_or_dirs_to_run
       @populate_timings = false
       @file_split_threshold = 999999
+      @heartbeat_updated_at = nil
 
       RSpec::Core::Formatters.register(Formatters::JobTimingRecorder, :dump_summary)
       RSpec::Core::Formatters.register(Formatters::ExampleCountRecorder, :dump_summary)
