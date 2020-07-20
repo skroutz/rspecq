@@ -129,7 +129,6 @@ module RSpecQ
       puts "Published queue (size=#{queue.publish(jobs)})"
     end
 
-
     private
 
     def reset_rspec_state!
@@ -157,7 +156,7 @@ module RSpecQ
     # as jobs by a worker.
     def files_to_example_ids(files)
       # TODO: do this programatically
-      cmd = "DISABLE_SPRING=1 bin/rspec --dry-run --format json #{files.join(' ')}"
+      cmd = "DISABLE_SPRING=1 bundle exec rspec --dry-run --format json #{files.join(' ')}"
       out = `#{cmd}`
 
       if !$?.success?
