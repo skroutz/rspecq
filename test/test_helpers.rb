@@ -1,7 +1,6 @@
 require "minitest/autorun"
 require "securerandom"
 require "rspecq"
-require "pry-byebug"
 
 module TestHelpers
   REDIS_HOST = "127.0.0.1".freeze
