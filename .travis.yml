@@ -1,0 +1,30 @@
+branches:
+  only:
+    - master
+
+language: ruby
+
+# Build matrix
+rvm:
+  - 2.3
+  - 2.4
+  - 2.5
+  - 2.6
+  - 2.7
+  - ruby-head
+env:
+  - RSPEC_CORE=3.8.0
+  - RSPEC_CORE=3.8.1
+  - RSPEC_CORE=3.8.2
+  - RSPEC_CORE=3.9.0
+  - RSPEC_CORE=3.9.1
+  - RSPEC_CORE=3.9.2
+
+jobs:
+  allow_failures:
+    - rvm: ruby-head
+
+services: redis-server
+
+script:
+  - bundle exec rake
