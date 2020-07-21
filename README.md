@@ -1,4 +1,4 @@
-# RSpec Queue
+RSpec Queue
 =========================================================================
 [![Gem Version](https://badge.fury.io/rb/rspecq.svg)](https://badge.fury.io/rb/rspecq)
 
