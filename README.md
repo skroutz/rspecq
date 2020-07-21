@@ -1,6 +1,8 @@
-# RSpecQ
+# RSpec Queue
+=========================================================================
+[![Gem Version](https://badge.fury.io/rb/rspecq.svg)](https://badge.fury.io/rb/rspecq)
 
-RSpecQ (RSpec Queue) distributes and executes RSpec suites among parallel
+RSpec Queue (RSpecQ) distributes and executes RSpec suites among parallel
 workers. It uses a centralized queue that workers connect to and pop off
 tests from. It ensures optimal scheduling of tests based on their run time,
 facilitating faster CI builds.
