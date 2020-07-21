@@ -14,6 +14,8 @@ module RSpecQ
     # will be split and scheduled on a per-example basis.
     attr_accessor :file_split_threshold
 
+    attr_reader :queue
+
     def initialize(build_id:, worker_id:, redis_host:, files_or_dirs_to_run:)
       @build_id = build_id
       @worker_id = worker_id
@@ -21,6 +23,7 @@ module RSpecQ
       @files_or_dirs_to_run = files_or_dirs_to_run
       @populate_timings = false
       @file_split_threshold = 999999
+      @heartbeat_updated_at = nil
 
       RSpec::Core::Formatters.register(Formatters::JobTimingRecorder, :dump_summary)
       RSpec::Core::Formatters.register(Formatters::ExampleCountRecorder, :dump_summary)
@@ -83,24 +86,6 @@ module RSpecQ
       end
     end
 
-    private
-
-    def reset_rspec_state!
-      RSpec.clear_examples
-
-      # TODO: remove after https://github.com/rspec/rspec-core/pull/2723
-      RSpec.world.instance_variable_set(:@example_group_counts_by_spec_file, Hash.new(0))
-
-      # RSpec.clear_examples does not reset those, which causes issues when
-      # a non-example error occurs (subsequent jobs are not executed)
-      # TODO: upstream
-      RSpec.world.non_example_failure = false
-
-      # we don't want an error that occured outside of the examples (which
-      # would set this to `true`) to stop the worker
-      RSpec.world.wants_to_quit = false
-    end
-
     def try_publish_queue!(queue)
       return if !queue.become_master
 
@@ -144,6 +129,24 @@ module RSpecQ
       puts "Published queue (size=#{queue.publish(jobs)})"
     end
 
+    private
+
+    def reset_rspec_state!
+      RSpec.clear_examples
+
+      # TODO: remove after https://github.com/rspec/rspec-core/pull/2723
+      RSpec.world.instance_variable_set(:@example_group_counts_by_spec_file, Hash.new(0))
+
+      # RSpec.clear_examples does not reset those, which causes issues when
+      # a non-example error occurs (subsequent jobs are not executed)
+      # TODO: upstream
+      RSpec.world.non_example_failure = false
+
+      # we don't want an error that occured outside of the examples (which
+      # would set this to `true`) to stop the worker
+      RSpec.world.wants_to_quit = false
+    end
+
     # NOTE: RSpec has to load the files before we can split them as individual
     # examples. In case a file to be splitted fails to be loaded
     # (e.g. contains a syntax error), we return the slow files unchanged,
@@ -153,7 +156,7 @@ module RSpecQ
     # as jobs by a worker.
     def files_to_example_ids(files)
       # TODO: do this programatically
-      cmd = "DISABLE_SPRING=1 bin/rspec --dry-run --format json #{files.join(' ')}"
+      cmd = "DISABLE_SPRING=1 bundle exec rspec --dry-run --format json #{files.join(' ')}"
       out = `#{cmd}`
 
       if !$?.success?

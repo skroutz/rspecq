@@ -89,7 +89,8 @@ in the final report (`--report`).
 Workers emit a timestamp after each example, as a heartbeat, to denote
 that they're fine and performing jobs. If a worker hasn't reported for
 a given amount of time (see `WORKER_LIVENESS_SEC`) it is considered dead
-and the job it reserved will be requeued, so that it is picked up by another worker.
+and the job it reserved will be requeued, so that it is picked up by another
+worker.
 
 This protects us against unrecoverable worker failures
 (e.g. a segmentation fault in MRI).
@@ -100,12 +101,18 @@ This protects us against unrecoverable worker failures
 
 **Update**: ci-queue [deprecated support for RSpec](https://github.com/Shopify/ci-queue/pull/149).
 
-While evaluating ci-queue for our RSpec suite, we experienced slow worker boot times (up to 3 minutes in some cases) combined with disk saturation and increased memory consumption. This is due to the fact that a worker in ci-queue has to
-load every spec file on boot. In applications with
-a large number of spec files this may result in a significant performance hit and in case of cloud environments increased billings. 
+While evaluating ci-queue for our RSpec suite, we experienced slow worker boot
+times (up to 3 minutes in some cases) combined with disk saturation and
+increased memory consumption. This is due to the fact that a worker in
+ci-queue has to
+load every spec file on boot. In applications with large number of spec
+files this may result in a significant performance hit and, in case of cloud
+environments, increased usage billings.
 
 RSpecQ works with spec files as its unit of work (as opposed to ci-queue which
-works with individual examples). This means that an RSpecQ worker only loads a file when it's needed and each worker only loads a subset of all files. Additionally this allows suites to keep using `before(:all)` hooks
+works with individual examples). This means that an RSpecQ worker only loads a
+file when it's needed and each worker only loads a subset of all files.
+Additionally this allows suites to keep using `before(:all)` hooks
 (which ci-queue explicitly rejects). (Note: RSpecQ also schedules individual
 examples, but only when this is deemed necessary, see section
 "Spec file splitting").
@@ -121,6 +128,20 @@ file threshold" which, currently has to be set manually (but this can be
 improved in the future).
 
 
+## Development
+
+First install the required development/runtime dependencies:
+
+```
+$ bundle install
+```
+
+Then you can execute the tests after spinning up a Redis instance at
+127.0.0.1:6379:
+
+```
+$ bundle exec rake
+```
 
 
 ## License
