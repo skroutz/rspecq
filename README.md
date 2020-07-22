@@ -146,6 +146,12 @@ Then you can execute the tests after spinning up a Redis instance at
 $ bundle exec rake
 ```
 
+To enable verbose output, set the `RSPECQ_DEBUG` environment variable:
+
+```
+$ RSPECQ_DEBUG=1 bundle exec rake
+```
+
 
 ## License
 

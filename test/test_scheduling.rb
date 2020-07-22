@@ -4,14 +4,14 @@ class TestScheduling < RSpecQTest
   def test_scheduling_with_timings_simple
     worker = new_worker("timings")
     worker.populate_timings = true
-    worker.work
+    silent { worker.work }
 
     assert_queue_well_formed(worker.queue)
 
     worker = new_worker("timings")
     # worker.populate_timings is false by default
     queue = worker.queue
-    worker.try_publish_queue!(queue)
+    silent { worker.try_publish_queue!(queue) }
 
     assert_equal [
       "./test/sample_suites/timings/spec/very_slow_spec.rb",
@@ -25,7 +25,7 @@ class TestScheduling < RSpecQTest
   def test_scheduling_with_timings_and_splitting
     worker = new_worker("scheduling")
     worker.populate_timings = true
-    worker.work
+    silent { worker.work }
 
     assert_queue_well_formed(worker.queue)
 
@@ -33,7 +33,7 @@ class TestScheduling < RSpecQTest
     worker = new_worker("scheduling")
     worker.populate_timings = true
     worker.file_split_threshold = 0.2
-    worker.work
+    silent { worker.work }
 
     assert_queue_well_formed(worker.queue)
 
@@ -47,7 +47,7 @@ class TestScheduling < RSpecQTest
     worker = new_worker("scheduling")
     worker.populate_timings = true
     worker.file_split_threshold = 0.2
-    worker.try_publish_queue!(worker.queue)
+    silent { worker.try_publish_queue!(worker.queue) }
 
     assert_equal [
       "./test/sample_suites/scheduling/spec/foo_spec.rb[1:2:1]",
@@ -59,14 +59,14 @@ class TestScheduling < RSpecQTest
   def test_untimed_jobs_scheduled_in_the_middle
     worker = new_worker("scheduling_untimed/spec/foo")
     worker.populate_timings = true
-    worker.work
+    silent { worker.work }
 
     assert_queue_well_formed(worker.queue)
     assert worker.queue.build_successful?
     refute_empty worker.queue.timings
 
     worker = new_worker("scheduling_untimed")
-    worker.try_publish_queue!(worker.queue)
+    silent { worker.try_publish_queue!(worker.queue) }
     assert_equal [
       "./test/sample_suites/scheduling_untimed/spec/foo/bar_spec.rb",
       "./test/sample_suites/scheduling_untimed/spec/foo/foo_spec.rb",

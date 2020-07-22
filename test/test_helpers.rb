@@ -63,8 +63,24 @@ module TestHelpers
     Process.spawn(
       "#{EXEC_CMD} -w #{worker_id} -b #{build_id}",
       chdir: suite_path(suite),
-      out: (ENV["RSPECQ_DEBUG"] ? :out : "/dev/null"),
+      out: (ENV["RSPECQ_DEBUG"] ? :out : File::NULL),
     )
+  end
+
+  # Supresses stdout of the code provided in the block
+  def silent
+    if ENV["RSPECQ_DEBUG"]
+      yield
+      return
+    end
+
+    begin
+      orig = $stdout.clone
+      $stdout.reopen(File::NULL, 'w')
+      yield
+    ensure
+      $stdout.reopen(orig)
+    end
   end
 end
 
