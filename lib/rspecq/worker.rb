@@ -1,4 +1,5 @@
 require "json"
+require "pathname"
 require "pp"
 
 module RSpecQ
