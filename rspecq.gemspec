@@ -12,7 +12,7 @@ Gem::Specification.new do |s|
   s.homepage    = "https://github.com/skroutz/rspecq"
   s.license     = "MIT"
 
-  if ENV["RSPEC_CORE"]
+  if ENV["CI"] && ENV["RSPEC_CORE"]
     s.add_dependency "rspec-core", "#{ENV['RSPEC_CORE']}"
   else
     s.add_dependency "rspec-core"
