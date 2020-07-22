@@ -1,6 +1,6 @@
 RSpec Queue
 =========================================================================
-[![Build Status](https://api.travis-ci.org/skroutz/rspecq.svg?branch=master)](https://travis-ci.org/skroutz/rspecq)
+[![Build Status](https://travis-ci.com/skroutz/rspecq.svg?branch=master)](https://travis-ci.com/github/skroutz/rspecq)
 [![Gem Version](https://badge.fury.io/rb/rspecq.svg)](https://badge.fury.io/rb/rspecq)
 
 RSpec Queue (RSpecQ) distributes and executes RSpec suites among parallel
@@ -144,6 +144,12 @@ Then you can execute the tests after spinning up a Redis instance at
 
 ```
 $ bundle exec rake
+```
+
+To enable verbose output, set the `RSPECQ_DEBUG` environment variable:
+
+```
+$ RSPECQ_DEBUG=1 bundle exec rake
 ```
 
 

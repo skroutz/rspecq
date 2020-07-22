@@ -4,6 +4,7 @@ require "rspecq"
 
 module TestHelpers
   REDIS_HOST = "127.0.0.1".freeze
+  EXEC_CMD = "bundle exec rspecq"
 
   def rand_id
     SecureRandom.hex(4)
@@ -23,7 +24,7 @@ module TestHelpers
     build_id = rand_id
 
     Dir.chdir(suite_path(path)) do
-      out = `bundle exec rspecq --worker #{worker_id} --build #{build_id} #{args}`
+      out = `#{EXEC_CMD} --worker #{worker_id} --build #{build_id} #{args}`
       puts out if ENV["RSPECQ_DEBUG"]
     end
 
@@ -56,6 +57,30 @@ module TestHelpers
 
   def suite_path(path)
     File.join("test", "sample_suites", path)
+  end
+
+  def start_worker(build_id:, worker_id: rand_id, suite:)
+    Process.spawn(
+      "#{EXEC_CMD} -w #{worker_id} -b #{build_id}",
+      chdir: suite_path(suite),
+      out: (ENV["RSPECQ_DEBUG"] ? :out : File::NULL),
+    )
+  end
+
+  # Supresses stdout of the code provided in the block
+  def silent
+    if ENV["RSPECQ_DEBUG"]
+      yield
+      return
+    end
+
+    begin
+      orig = $stdout.clone
+      $stdout.reopen(File::NULL, 'w')
+      yield
+    ensure
+      $stdout.reopen(orig)
+    end
   end
 end
 

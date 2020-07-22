@@ -216,12 +216,6 @@ module RSpecQ
       @redis.lrange(key_queue_unprocessed, 0, -1)
     end
 
-    private
-
-    def key(*keys)
-      [@build_id, keys].join(":")
-    end
-
     # redis: STRING [STATUS_INITIALIZING, STATUS_READY]
     def key_queue_status
       key("queue", "status")
@@ -293,6 +287,12 @@ module RSpecQ
     # Last build is at the head of the list.
     def key_build_times
       "build_times"
+    end
+
+    private
+
+    def key(*keys)
+      [@build_id, keys].join(":")
     end
 
     # We don't use any Ruby `Time` methods because specs that use timecop in
