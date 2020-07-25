@@ -25,25 +25,29 @@ OptionParser.new do |o|
   o.separator ""
 	o.separator "OPTIONS:"
 
-  o.on("-b", "--build ID", "A unique identifier denoting the CI build") do |v|
+  o.on("-b", "--build ID", "A unique identifier for the build. Should be " \
+       "common among workers participating in the same build.") do |v|
     opts[:build] = v
   end
 
-  o.on("-w", "--worker ID", "A unique identifier for this worker") do |v|
+  o.on("-w", "--worker ID", "An identifier for the worker. Workers " \
+       "participating in the same build should have distinct IDs.") do |v|
     opts[:worker] = v
   end
 
-  o.on("-r", "--redis HOST", "Redis host to connect to (default: #{DEFAULT_REDIS_HOST})") do |v|
+  o.on("-r", "--redis HOST", "Redis host to connect to " \
+       "(default: #{DEFAULT_REDIS_HOST}).") do |v|
     opts[:redis_host] = v
   end
 
-  o.on("--update-timings", "Update the global job timings key based on " \
-       "the timings of this build") do |v|
+  o.on("--update-timings", "Update the global job timings key with the "     \
+       "timings of this build. Note: This key is used as the basis for job " \
+       "scheduling.") do |v|
     opts[:timings] = v
   end
 
   o.on("--file-split-threshold N", Integer, "Split spec files slower than N " \
-       "seconds and schedule them as individual examples") do |v|
+       "seconds and schedule them as individual examples.") do |v|
     opts[:file_split_threshold] = v
   end
 
@@ -51,22 +55,22 @@ OptionParser.new do |o|
                    "instead print build progress and exit when it's "        \
                    "finished.\n#{o.summary_indent*9} "                       \
                    "Exits with a non-zero status code if there were any "    \
-                   "failures") do |v|
+                   "failures.") do |v|
     opts[:report] = v
   end
 
   o.on("--report-timeout N", Integer, "Fail if build is not finished after " \
        "N seconds. Only applicable if --report is enabled "                  \
-       "(default: #{DEFAULT_REPORT_TIMEOUT})") do |v|
+       "(default: #{DEFAULT_REPORT_TIMEOUT}).") do |v|
     opts[:report_timeout] = v
   end
 
-  o.on_tail("-h", "--help", "Show this message") do
+  o.on_tail("-h", "--help", "Show this message.") do
     puts o
     exit
   end
 
-  o.on_tail("-v", "--version", "Print the version and exit") do
+  o.on_tail("-v", "--version", "Print the version and exit.") do
     puts "#{name} #{RSpecQ::VERSION}"
     exit
   end
