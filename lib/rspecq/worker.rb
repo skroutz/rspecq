@@ -15,9 +15,9 @@ module RSpecQ
     # will be split and scheduled on a per-example basis.
     attr_accessor :file_split_threshold
 
-    attr_reader :queue
+    attr_reader :queue, :max_requeues
 
-    def initialize(build_id:, worker_id:, redis_host:, files_or_dirs_to_run:)
+    def initialize(build_id:, worker_id:, redis_host:, files_or_dirs_to_run:, max_requeues:)
       @build_id = build_id
       @worker_id = worker_id
       @queue = Queue.new(build_id, worker_id, redis_host)
@@ -25,6 +25,7 @@ module RSpecQ
       @populate_timings = false
       @file_split_threshold = 999999
       @heartbeat_updated_at = nil
+      @max_requeues = max_requeues
 
       RSpec::Core::Formatters.register(Formatters::JobTimingRecorder, :dump_summary)
       RSpec::Core::Formatters.register(Formatters::ExampleCountRecorder, :dump_summary)
@@ -64,7 +65,7 @@ module RSpecQ
         RSpec.configuration.detail_color = :magenta
         RSpec.configuration.seed = srand && srand % 0xFFFF
         RSpec.configuration.backtrace_formatter.filter_gem('rspecq')
-        RSpec.configuration.add_formatter(Formatters::FailureRecorder.new(@queue, job))
+        RSpec.configuration.add_formatter(Formatters::FailureRecorder.new(@queue, job, max_requeues))
         RSpec.configuration.add_formatter(Formatters::ExampleCountRecorder.new(@queue))
         RSpec.configuration.add_formatter(Formatters::WorkerHeartbeatRecorder.new(self))
 

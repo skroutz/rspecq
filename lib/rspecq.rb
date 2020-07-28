@@ -1,10 +1,6 @@
 require "rspec/core"
 
 module RSpecQ
-  # Failed examples will be retried by (usually) another worker up to
-  # MAX_REQUEUES times, as a mitigation against flaky tests.
-  MAX_REQUEUES = 3
-
   # If a worker haven't executed an example for more than WORKER_LIVENESS_SEC
   # seconds, it is considered dead and its reserved work will be put back
   # to the queue to be picked up by another worker.

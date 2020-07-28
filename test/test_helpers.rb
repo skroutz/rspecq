@@ -5,6 +5,7 @@ require "rspecq"
 module TestHelpers
   REDIS_HOST = "127.0.0.1".freeze
   EXEC_CMD = "bundle exec rspecq"
+  MAX_REQUEUES = 3
 
   def rand_id
     SecureRandom.hex(4)
@@ -16,6 +17,7 @@ module TestHelpers
       worker_id: rand_id,
       redis_host: REDIS_HOST,
       files_or_dirs_to_run: suite_path(path),
+      max_requeues: MAX_REQUEUES
     )
   end
 
