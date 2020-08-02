@@ -15,9 +15,15 @@ module RSpecQ
     # will be split and scheduled on a per-example basis.
     attr_accessor :file_split_threshold
 
-    attr_reader :queue, :max_requeues
+    # Retry failed examples up to N times (with N being the supplied value)
+    # before considering them legit failures
+    # 
+    # Defaults to the value set in DEFAULT_MAX_REQUEUES
+    attr_accessor :max_requeues
 
-    def initialize(build_id:, worker_id:, redis_host:, files_or_dirs_to_run:, max_requeues:)
+    attr_reader :queue
+
+    def initialize(build_id:, worker_id:, redis_host:, files_or_dirs_to_run:)
       @build_id = build_id
       @worker_id = worker_id
       @queue = Queue.new(build_id, worker_id, redis_host)
@@ -25,7 +31,7 @@ module RSpecQ
       @populate_timings = false
       @file_split_threshold = 999999
       @heartbeat_updated_at = nil
-      @max_requeues = max_requeues
+      @max_requeues = DEFAULT_MAX_REQUEUES
 
       RSpec::Core::Formatters.register(Formatters::JobTimingRecorder, :dump_summary)
       RSpec::Core::Formatters.register(Formatters::ExampleCountRecorder, :dump_summary)

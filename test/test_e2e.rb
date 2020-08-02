@@ -12,9 +12,9 @@ class TestEndToEnd < RSpecQTest
       "./spec/bar_spec.rb[1:2]",
     ], queue
 
-   assert_equal 3 + TestHelpers::MAX_REQUEUES, queue.example_count
+   assert_equal 3 + RSpecQ::DEFAULT_MAX_REQUEUES, queue.example_count
 
-   assert_equal({ "./spec/bar_spec.rb[1:2]" => "3" }, queue.requeued_jobs)
+   assert_equal({ "./spec/bar_spec.rb[1:2]" => RSpecQ::DEFAULT_MAX_REQUEUES.to_s }, queue.requeued_jobs)
   end
 
   def test_passing_suite
@@ -38,10 +38,13 @@ class TestEndToEnd < RSpecQTest
     assert_equal({ "./spec/foo_spec.rb[1:1]" => "2" }, queue.requeued_jobs)
   end
 
-  def test_suite_with_failures_without_retries
-    queue = exec_build("failing_suite", "--max-requeues=0")
+  def test_flakey_suite_without_retries
+    queue = exec_build("flakey_suite", "--max-requeues=0")
 
     refute(queue.build_successful?)
+    assert_processed_jobs [
+      "./spec/foo_spec.rb",
+    ], queue
 
     assert_empty(queue.requeued_jobs)
   end

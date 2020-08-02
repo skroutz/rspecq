@@ -4,7 +4,6 @@ require "rspecq"
 
 DEFAULT_REDIS_HOST = "127.0.0.1"
 DEFAULT_REPORT_TIMEOUT = 3600 # 1 hour
-DEFAULT_MAX_REQUEUES = 3
 
 def env_set?(var)
   ["1", "true"].include?(ENV[var])
@@ -66,8 +65,9 @@ OptionParser.new do |o|
     opts[:report_timeout] = v
   end
 
-  o.on("--max-requeues N", Integer, "Sets the number of max requeues to N " \
-       "times (default: #{DEFAULT_MAX_REQUEUES}).") do |v|
+  o.on("--max-requeues N", Integer, "Retry failed examples up to N times "   \
+       "before considering them legit failures "                             \
+       "(default: #{RSpecQ::DEFAULT_MAX_REQUEUES}).") do |v|
     opts[:max_requeues] = v
   end
 
@@ -89,7 +89,7 @@ opts[:timings] ||= env_set?("RSPECQ_UPDATE_TIMINGS")
 opts[:file_split_threshold] ||= Integer(ENV["RSPECQ_FILE_SPLIT_THRESHOLD"] || 9999999)
 opts[:report] ||= env_set?("RSPECQ_REPORT")
 opts[:report_timeout] ||= Integer(ENV["RSPECQ_REPORT_TIMEOUT"] || DEFAULT_REPORT_TIMEOUT)
-opts[:max_requeues] ||= Integer(ENV["MAX_REQUEUES"] || DEFAULT_MAX_REQUEUES)
+opts[:max_requeues] ||= Integer(ENV["RSPECQ_MAX_REQUEUES"] || RSpecQ::DEFAULT_MAX_REQUEUES)
 
 raise OptionParser::MissingArgument.new(:build) if opts[:build].nil?
 raise OptionParser::MissingArgument.new(:worker) if !opts[:report] && opts[:worker].nil?
@@ -108,10 +108,10 @@ else
     worker_id: opts[:worker],
     redis_host: opts[:redis_host],
     files_or_dirs_to_run: ARGV[0] || "spec",
-    max_requeues: opts[:max_requeues]
   )
 
   worker.populate_timings = opts[:timings]
   worker.file_split_threshold = opts[:file_split_threshold]
+  worker.max_requeues = opts[:max_requeues]
   worker.work
 end

@@ -52,7 +52,7 @@ OPTIONS:
         --report                     Enable reporter mode: do not pull tests off the queue; instead print build progress and exit when it's finished.
                                      Exits with a non-zero status code if there were any failures.
         --report-timeout N           Fail if build is not finished after N seconds. Only applicable if --report is enabled (default: 3600).
-        --max-requeues N             Set the number of times a failing spec will be requeued (default: 3).
+        --max-requeues N             Retry failed examples up to N times before considering them legit failures (default: 3).
     -h, --help                       Show this message.
     -v, --version                    Print the version and exit.
 ```
