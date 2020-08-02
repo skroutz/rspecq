@@ -17,7 +17,7 @@ module RSpecQ
 
     # Retry failed examples up to N times (with N being the supplied value)
     # before considering them legit failures
-    # 
+    #
     # Defaults to 3
     attr_accessor :max_requeues
 
@@ -102,10 +102,11 @@ module RSpecQ
 
       timings = queue.timings
       if timings.empty?
-        # TODO: should be a warning reported somewhere (Sentry?)
         q_size = queue.publish(files_to_run.shuffle)
-        puts "WARNING: No timings found! Published queue in " \
-             "random order (size=#{q_size})"
+        log_event(
+          "No timings found! Published queue in random order (size=#{q_size})",
+          "warning"
+        )
         return
       end
 
@@ -114,7 +115,12 @@ module RSpecQ
       end.map(&:first) & files_to_run
 
       if slow_files.any?
-        puts "Slow files (threshold=#{file_split_threshold}): #{slow_files}"
+        log_event(
+          "Slow files detected (threshold=#{file_split_threshold}): #{slow_files}",
+          "info",
+          slow_files: slow_files,
+          slow_files_count: slow_files.count,
+        )
       end
 
       # prepare jobs to run
@@ -168,14 +174,22 @@ module RSpecQ
       out = `#{cmd}`
 
       if !$?.success?
-        # TODO: emit warning to Sentry
-        puts "WARNING: Error splitting slow files; falling back to regular scheduling:"
+        puts out
+        puts $?.inspect
+        rspec_output = begin
+                         JSON.parse(out)
+                       rescue JSON::ParserError
+                         out
+                       end
 
-        begin
-          pp JSON.parse(out)
-        rescue JSON::ParserError
-          puts out
-        end
+        log_event(
+          "Failed to split slow files, falling back to regular scheduling",
+          "error",
+          rspec_output: rspec_output,
+          cmd_result: $?.inspect,
+        )
+
+        pp rspec_output
         puts
 
         return files
@@ -191,6 +205,22 @@ module RSpecQ
 
     def elapsed(since)
       Process.clock_gettime(Process::CLOCK_MONOTONIC) - since
+    end
+
+    def log_event(msg, level, additional={})
+      puts msg
+
+      Raven.capture_message(msg, level: level, extra: {
+        build: @build_id,
+        worker: @worker_id,
+        queue: queue.inspect,
+        files_or_dirs_to_run: @files_or_dirs_to_run,
+        populate_timings: populate_timings,
+        file_split_threshold: file_split_threshold,
+        heartbeat_updated_at: @heartbeat_updated_at,
+        object: self.inspect,
+        pid: Process.pid,
+      }.merge(additional))
     end
   end
 end
