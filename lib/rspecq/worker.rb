@@ -35,23 +35,23 @@ module RSpecQ
     def work
       puts "Working for build #{@build_id} (worker=#{@worker_id})"
 
-      try_publish_queue!(@queue)
-      @queue.wait_until_published
+      try_publish_queue!(queue)
+      queue.wait_until_published
 
       loop do
         # we have to bootstrap this so that it can be used in the first call
         # to `requeue_lost_job` inside the work loop
         update_heartbeat
 
-        lost = @queue.requeue_lost_job
+        lost = queue.requeue_lost_job
         puts "Requeued lost job: #{lost}" if lost
 
         # TODO: can we make `reserve_job` also act like exhausted? and get
         # rid of `exhausted?` (i.e. return false if no jobs remain)
-        job = @queue.reserve_job
+        job = queue.reserve_job
 
         # build is finished
-        return if job.nil? && @queue.exhausted?
+        return if job.nil? && queue.exhausted?
 
         next if job.nil?
 
@@ -64,25 +64,25 @@ module RSpecQ
         RSpec.configuration.detail_color = :magenta
         RSpec.configuration.seed = srand && srand % 0xFFFF
         RSpec.configuration.backtrace_formatter.filter_gem('rspecq')
-        RSpec.configuration.add_formatter(Formatters::FailureRecorder.new(@queue, job))
-        RSpec.configuration.add_formatter(Formatters::ExampleCountRecorder.new(@queue))
+        RSpec.configuration.add_formatter(Formatters::FailureRecorder.new(queue, job))
+        RSpec.configuration.add_formatter(Formatters::ExampleCountRecorder.new(queue))
         RSpec.configuration.add_formatter(Formatters::WorkerHeartbeatRecorder.new(self))
 
         if populate_timings
-          RSpec.configuration.add_formatter(Formatters::JobTimingRecorder.new(@queue, job))
+          RSpec.configuration.add_formatter(Formatters::JobTimingRecorder.new(queue, job))
         end
 
         opts = RSpec::Core::ConfigurationOptions.new(["--format", "progress", job])
         _result = RSpec::Core::Runner.new(opts).run($stderr, $stdout)
 
-        @queue.acknowledge_job(job)
+        queue.acknowledge_job(job)
       end
     end
 
     # Update the worker heartbeat if necessary
     def update_heartbeat
       if @heartbeat_updated_at.nil? || elapsed(@heartbeat_updated_at) >= HEARTBEAT_FREQUENCY
-        @queue.record_worker_heartbeat
+        queue.record_worker_heartbeat
         @heartbeat_updated_at = Process.clock_gettime(Process::CLOCK_MONOTONIC)
       end
     end
