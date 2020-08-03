@@ -9,6 +9,7 @@ Breaking changes are prefixed with a "[BREAKING]" label.
 - CLI: Flags can now be also set environment variables [[c519230](https://github.com/skroutz/rspecq/commit/c5192303e229f361e8ac86ae449b4ea84d42e022)]
 - CLI: Added shorthand specifiers versions for some flags [[df9faa8](https://github.com/skroutz/rspecq/commit/df9faa8ec6721af8357cfee4de6a2fe7b32070fc)]
 - CLI: Added `--help` and `--version` flags [[df9faa8](https://github.com/skroutz/rspecq/commit/df9faa8ec6721af8357cfee4de6a2fe7b32070fc)]
+- CLI: Max number of retries for failed examples is now configurable via the `--max-requeues` option [[#14](https://github.com/skroutz/rspecq/pull/14)]
 
 ### Changed
 
