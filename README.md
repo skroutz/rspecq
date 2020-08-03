@@ -11,6 +11,25 @@ facilitating faster CI builds.
 RSpecQ is inspired by [test-queue](https://github.com/tmm1/test-queue)
 and [ci-queue](https://github.com/Shopify/ci-queue).
 
+## Features
+
+- Distributes and executes an RSpec suite among many parallel workers processes
+  (potentially located in different hosts), facilitating faster CI builds.
+- Centralized, real-time reporting of build progress from a single process.
+- Optimal job scheduling by using timings statistics from previous runs and
+  automatically scheduling slow spec files as individual examples. See
+  [*Spec file splitting*](#spec-file-splitting).
+- Automatic retry of test failures before being considered legit, in order to
+  rule out flakiness. See [*Requeues*](#requeues).
+- Automatically split very slow files and schedule them as individual examples,
+  to allow
+- Handles intermittent worker failures (e.g. network hiccups, faulty hardware)
+  by detecting non-responsive workers. See [*Worker failures*](#worker-failures)
+- PLANNED: [Sentry](https://sentry.io) integration for monitoring important
+  build-level events. See [#16](https://github.com/skroutz/rspecq/pull/16).
+- PLANNED: StatsD integration for various build-level metrics and insights.
+  See [#2](https://github.com/skroutz/rspecq/issues/2).
+
 ## Usage
 
 A worker needs to be given a name and the build it will participate in.
@@ -55,6 +74,17 @@ OPTIONS:
     -h, --help                       Show this message.
     -v, --version                    Print the version and exit.
 ```
+
+### Sentry integration
+
+RSpecQ can optionally emit build events to a
+[Sentry](https://sentry.io) project by setting the
+[`SENTRY_DSN`](https://github.com/getsentry/raven-ruby#raven-only-runs-when-sentry_dsn-is-set)
+environment variable.
+
+This is convenient for monitoring important warnings/errors that may impact
+build times, such as the fact that no previous timings were found and
+therefore job scheduling was effectively random for a particular build.
 
 
 ## How it works
