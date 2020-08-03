@@ -169,13 +169,11 @@ module RSpecQ
     # Their errors will be reported in the normal flow, when they're picked up
     # as jobs by a worker.
     def files_to_example_ids(files)
-      # TODO: do this programatically
-      cmd = "DISABLE_SPRING=1 bundle exec rspec --dry-run --format json #{files.join(' ')}"
+      cmd = "DISABLE_SPRING=1 bundle exec rspec --dry-run --format json #{files.join(' ')} 2>&1"
       out = `#{cmd}`
+      cmd_result = $?
 
-      if !$?.success?
-        puts out
-        puts $?.inspect
+      if !cmd_result.success?
         rspec_output = begin
                          JSON.parse(out)
                        rescue JSON::ParserError
@@ -186,11 +184,10 @@ module RSpecQ
           "Failed to split slow files, falling back to regular scheduling",
           "error",
           rspec_output: rspec_output,
-          cmd_result: $?.inspect,
+          cmd_result: cmd_result.inspect,
         )
 
         pp rspec_output
-        puts
 
         return files
       end
@@ -207,6 +204,8 @@ module RSpecQ
       Process.clock_gettime(Process::CLOCK_MONOTONIC) - since
     end
 
+    # Prints msg to standard output and emits an event to Sentry, if the
+    # SENTRY_DSN environment variable is set.
     def log_event(msg, level, additional={})
       puts msg
 
