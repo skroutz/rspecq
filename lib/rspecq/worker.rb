@@ -18,7 +18,7 @@ module RSpecQ
     # Retry failed examples up to N times (with N being the supplied value)
     # before considering them legit failures
     # 
-    # Defaults to the value set in DEFAULT_MAX_REQUEUES
+    # Defaults to 3
     attr_accessor :max_requeues
 
     attr_reader :queue
@@ -31,7 +31,7 @@ module RSpecQ
       @populate_timings = false
       @file_split_threshold = 999999
       @heartbeat_updated_at = nil
-      @max_requeues = DEFAULT_MAX_REQUEUES
+      @max_requeues = 3
 
       RSpec::Core::Formatters.register(Formatters::JobTimingRecorder, :dump_summary)
       RSpec::Core::Formatters.register(Formatters::ExampleCountRecorder, :dump_summary)

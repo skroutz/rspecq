@@ -12,9 +12,9 @@ class TestEndToEnd < RSpecQTest
       "./spec/bar_spec.rb[1:2]",
     ], queue
 
-   assert_equal 3 + RSpecQ::DEFAULT_MAX_REQUEUES, queue.example_count
+   assert_equal 3 + 3, queue.example_count
 
-   assert_equal({ "./spec/bar_spec.rb[1:2]" => RSpecQ::DEFAULT_MAX_REQUEUES.to_s }, queue.requeued_jobs)
+   assert_equal({ "./spec/bar_spec.rb[1:2]" => "3" }, queue.requeued_jobs)
   end
 
   def test_passing_suite

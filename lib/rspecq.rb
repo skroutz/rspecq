@@ -5,9 +5,6 @@ module RSpecQ
   # seconds, it is considered dead and its reserved work will be put back
   # to the queue to be picked up by another worker.
   WORKER_LIVENESS_SEC = 60.0
-
-  # If no value is given for max requeues, this value will be used.
-  DEFAULT_MAX_REQUEUES = 3
 end
 
 require_relative "rspecq/formatters/example_count_recorder"
