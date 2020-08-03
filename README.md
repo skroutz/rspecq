@@ -13,21 +13,20 @@ and [ci-queue](https://github.com/Shopify/ci-queue).
 
 ## Features
 
-- Distributes and executes an RSpec suite among many parallel workers processes
-  (potentially located in different hosts), facilitating faster CI builds.
-- Centralized, real-time reporting of build progress from a single process.
-- Optimal job scheduling by using timings statistics from previous runs and
+- Run an RSpec suite among many workers 
+  (potentially located in different hosts) in a distributed fashion,
+  facilitating faster CI builds.
+- Consolidated, real-time reporting of a build's progress.
+- Optimal scheduling of test execution by using timings statistics from previous runs and
   automatically scheduling slow spec files as individual examples. See
   [*Spec file splitting*](#spec-file-splitting).
 - Automatic retry of test failures before being considered legit, in order to
   rule out flakiness. See [*Requeues*](#requeues).
-- Automatically split very slow files and schedule them as individual examples,
-  to allow
-- Handles intermittent worker failures (e.g. network hiccups, faulty hardware)
-  by detecting non-responsive workers. See [*Worker failures*](#worker-failures)
-- PLANNED: [Sentry](https://sentry.io) integration for monitoring important
+- Handles intermittent worker failures (e.g. network hiccups, faulty hardware etc.)
+  by detecting non-responsive workers and requeing their jobs. See [*Worker failures*](#worker-failures)
+-[PLANNED] [Sentry](https://sentry.io) integration for monitoring important
   build-level events. See [#16](https://github.com/skroutz/rspecq/pull/16).
-- PLANNED: StatsD integration for various build-level metrics and insights.
+- [PLANNED] StatsD integration for various build-level metrics and insights.
   See [#2](https://github.com/skroutz/rspecq/issues/2).
 
 ## Usage
