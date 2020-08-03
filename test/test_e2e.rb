@@ -12,7 +12,7 @@ class TestEndToEnd < RSpecQTest
       "./spec/bar_spec.rb[1:2]",
     ], queue
 
-   assert_equal 3+RSpecQ::MAX_REQUEUES, queue.example_count
+   assert_equal 3 + 3, queue.example_count
 
    assert_equal({ "./spec/bar_spec.rb[1:2]" => "3" }, queue.requeued_jobs)
   end
@@ -36,6 +36,17 @@ class TestEndToEnd < RSpecQTest
     ], queue
 
     assert_equal({ "./spec/foo_spec.rb[1:1]" => "2" }, queue.requeued_jobs)
+  end
+
+  def test_flakey_suite_without_retries
+    queue = exec_build("flakey_suite", "--max-requeues=0")
+
+    refute(queue.build_successful?)
+    assert_processed_jobs [
+      "./spec/foo_spec.rb",
+    ], queue
+
+    assert_empty(queue.requeued_jobs)
   end
 
   def test_scheduling_by_file_and_custom_spec_path

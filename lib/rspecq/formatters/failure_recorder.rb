@@ -1,11 +1,12 @@
 module RSpecQ
   module Formatters
     class FailureRecorder
-      def initialize(queue, job)
+      def initialize(queue, job, max_requeues)
         @queue = queue
         @job = job
         @colorizer = RSpec::Core::Formatters::ConsoleCodes
         @non_example_error_recorded = false
+        @max_requeues = max_requeues
       end
 
       # Here we're notified about errors occuring outside of examples.
@@ -24,7 +25,7 @@ module RSpecQ
       def example_failed(notification)
         example = notification.example
 
-        if @queue.requeue_job(example.id, MAX_REQUEUES)
+        if @queue.requeue_job(example.id, @max_requeues)
           # HACK: try to avoid picking the job we just requeued; we want it
           # to be picked up by a different worker
           sleep 0.5

@@ -70,6 +70,7 @@ OPTIONS:
         --report                     Enable reporter mode: do not pull tests off the queue; instead print build progress and exit when it's finished.
                                      Exits with a non-zero status code if there were any failures.
         --report-timeout N           Fail if build is not finished after N seconds. Only applicable if --report is enabled (default: 3600).
+        --max-requeues N             Retry failed examples up to N times before considering them legit failures (default: 3).
     -h, --help                       Show this message.
     -v, --version                    Print the version and exit.
 ```
@@ -123,9 +124,9 @@ dynamically (see #3).
 
 As a mitigation technique against flaky tests, if an example fails it will be
 put back to the queue to be picked up by another worker. This will be repeated
-up to a certain number of times (set by `MAX_REQUEUES`), after which the example
-will be considered a legit failure and printed as such in the final
-report.
+up to a certain number of times (set with the `--max-requeues` option), after 
+which the example will be considered a legit failure and printed as such in the 
+final report.
 
 ### Worker failures
 
