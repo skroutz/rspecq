@@ -107,10 +107,10 @@ else
   worker = RSpecQ::Worker.new(
     build_id: opts[:build],
     worker_id: opts[:worker],
-    redis_host: opts[:redis_host],
-    files_or_dirs_to_run: ARGV[0] || "spec",
+    redis_host: opts[:redis_host]
   )
 
+  worker.files_or_dirs_to_run = ARGV[0] if ARGV[0]
   worker.populate_timings = opts[:timings]
   worker.file_split_threshold = opts[:file_split_threshold]
   worker.max_requeues = opts[:max_requeues]

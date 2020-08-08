@@ -11,12 +11,13 @@ module TestHelpers
   end
 
   def new_worker(path)
-    RSpecQ::Worker.new(
+    w = RSpecQ::Worker.new(
       build_id: rand_id,
       worker_id: rand_id,
-      redis_host: REDIS_HOST,
-      files_or_dirs_to_run: suite_path(path),
+      redis_host: REDIS_HOST
     )
+    w.files_or_dirs_to_run = suite_path(path)
+    w
   end
 
   def exec_build(path, args="")

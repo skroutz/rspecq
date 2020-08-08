@@ -6,6 +6,11 @@ module RSpecQ
   class Worker
     HEARTBEAT_FREQUENCY = WORKER_LIVENESS_SEC / 6
 
+    # The root path or individual spec files to execute.
+    #
+    # Defaults to "spec" (just like in RSpec)
+    attr_accessor :files_or_dirs_to_run
+
     # If true, job timings will be populated in the global Redis timings key
     #
     # Defaults to false
@@ -13,6 +18,8 @@ module RSpecQ
 
     # If set, spec files that are known to take more than this value to finish,
     # will be split and scheduled on a per-example basis.
+    #
+    # Defaults to 999999
     attr_accessor :file_split_threshold
 
     # Retry failed examples up to N times (with N being the supplied value)
@@ -23,11 +30,11 @@ module RSpecQ
 
     attr_reader :queue
 
-    def initialize(build_id:, worker_id:, redis_host:, files_or_dirs_to_run:)
+    def initialize(build_id:, worker_id:, redis_host:)
       @build_id = build_id
       @worker_id = worker_id
       @queue = Queue.new(build_id, worker_id, redis_host)
-      @files_or_dirs_to_run = files_or_dirs_to_run
+      @files_or_dirs_to_run = "spec"
       @populate_timings = false
       @file_split_threshold = 999999
       @heartbeat_updated_at = nil
@@ -97,7 +104,7 @@ module RSpecQ
     def try_publish_queue!(queue)
       return if !queue.become_master
 
-      RSpec.configuration.files_or_directories_to_run = @files_or_dirs_to_run
+      RSpec.configuration.files_or_directories_to_run = files_or_dirs_to_run
       files_to_run = RSpec.configuration.files_to_run.map { |j| relative_path(j) }
 
       timings = queue.timings
@@ -213,7 +220,7 @@ module RSpecQ
         build: @build_id,
         worker: @worker_id,
         queue: queue.inspect,
-        files_or_dirs_to_run: @files_or_dirs_to_run,
+        files_or_dirs_to_run: files_or_dirs_to_run,
         populate_timings: populate_timings,
         file_split_threshold: file_split_threshold,
         heartbeat_updated_at: @heartbeat_updated_at,
