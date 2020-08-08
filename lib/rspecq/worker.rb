@@ -117,34 +117,35 @@ module RSpecQ
         return
       end
 
-      slow_files = timings.take_while do |_job, duration|
-        duration >= file_split_threshold
-      end.map(&:first) & files_to_run
-
-      if slow_files.any?
-        log_event(
-          "Slow files detected (threshold=#{file_split_threshold}): #{slow_files}",
-          "info",
-          slow_files: slow_files,
-          slow_files_count: slow_files.count,
-        )
-      end
-
       # prepare jobs to run
       jobs = []
-      jobs.concat(files_to_run - slow_files)
-      jobs.concat(files_to_example_ids(slow_files)) if slow_files.any?
+      slow_files = []
 
-      # assign timings to all of them
+      if file_split_threshold
+        slow_files = timings.take_while do |_job, duration|
+          duration >= file_split_threshold
+        end.map(&:first) & files_to_run
+      end
+
+      if slow_files.any?
+        jobs.concat(files_to_run - slow_files)
+        jobs.concat(files_to_example_ids(slow_files))
+      else
+        jobs.concat(files_to_run)
+      end
+
       default_timing = timings.values[timings.values.size/2]
 
+      # assign timings (based on previous runs) to all jobs
       jobs = jobs.each_with_object({}) do |j, h|
-        # heuristic: put untimed jobs in the middle of the queue
-        puts "New/untimed job: #{j}" if timings[j].nil?
+        puts "Untimed job: #{j}" if timings[j].nil?
+
+        # HEURISTIC: put jobs without previous timings (e.g. a newly added
+        # spec file) in the middle of the queue
         h[j] = timings[j] || default_timing
       end
 
-      # finally, sort them based on their timing (slowest first)
+      # sort jobs based on their timings (slowest to be processed first)
       jobs = jobs.sort_by { |_j, t| -t }.map(&:first)
 
       puts "Published queue (size=#{queue.publish(jobs)})"
@@ -170,11 +171,9 @@ module RSpecQ
 
     # NOTE: RSpec has to load the files before we can split them as individual
     # examples. In case a file to be splitted fails to be loaded
-    # (e.g. contains a syntax error), we return the slow files unchanged,
-    # thereby falling back to scheduling them normally.
-    #
-    # Their errors will be reported in the normal flow, when they're picked up
-    # as jobs by a worker.
+    # (e.g. contains a syntax error), we return the files unchanged, thereby
+    # falling back to scheduling them as whole files. Their errors will be
+    # reported in the normal flow when they're eventually picked up by a worker.
     def files_to_example_ids(files)
       cmd = "DISABLE_SPRING=1 bundle exec rspec --dry-run --format json #{files.join(' ')} 2>&1"
       out = `#{cmd}`
