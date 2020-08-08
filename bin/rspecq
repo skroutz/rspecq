@@ -24,7 +24,7 @@ OptionParser.new do |o|
   BANNER
 
   o.separator ""
-	o.separator "OPTIONS:"
+  o.separator "OPTIONS:"
 
   o.on("-b", "--build ID", "A unique identifier for the build. Should be " \
        "common among workers participating in the same build.") do |v|

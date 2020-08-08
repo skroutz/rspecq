@@ -17,7 +17,7 @@ module RSpecQ
 
     # Retry failed examples up to N times (with N being the supplied value)
     # before considering them legit failures
-    # 
+    #
     # Defaults to 3
     attr_accessor :max_requeues
 
@@ -102,10 +102,11 @@ module RSpecQ
 
       timings = queue.timings
       if timings.empty?
-        # TODO: should be a warning reported somewhere (Sentry?)
         q_size = queue.publish(files_to_run.shuffle)
-        puts "WARNING: No timings found! Published queue in " \
-             "random order (size=#{q_size})"
+        log_event(
+          "No timings found! Published queue in random order (size=#{q_size})",
+          "warning"
+        )
         return
       end
 
@@ -114,7 +115,12 @@ module RSpecQ
       end.map(&:first) & files_to_run
 
       if slow_files.any?
-        puts "Slow files (threshold=#{file_split_threshold}): #{slow_files}"
+        log_event(
+          "Slow files detected (threshold=#{file_split_threshold}): #{slow_files}",
+          "info",
+          slow_files: slow_files,
+          slow_files_count: slow_files.count,
+        )
       end
 
       # prepare jobs to run
@@ -163,20 +169,25 @@ module RSpecQ
     # Their errors will be reported in the normal flow, when they're picked up
     # as jobs by a worker.
     def files_to_example_ids(files)
-      # TODO: do this programatically
-      cmd = "DISABLE_SPRING=1 bundle exec rspec --dry-run --format json #{files.join(' ')}"
+      cmd = "DISABLE_SPRING=1 bundle exec rspec --dry-run --format json #{files.join(' ')} 2>&1"
       out = `#{cmd}`
+      cmd_result = $?
 
-      if !$?.success?
-        # TODO: emit warning to Sentry
-        puts "WARNING: Error splitting slow files; falling back to regular scheduling:"
+      if !cmd_result.success?
+        rspec_output = begin
+                         JSON.parse(out)
+                       rescue JSON::ParserError
+                         out
+                       end
 
-        begin
-          pp JSON.parse(out)
-        rescue JSON::ParserError
-          puts out
-        end
-        puts
+        log_event(
+          "Failed to split slow files, falling back to regular scheduling",
+          "error",
+          rspec_output: rspec_output,
+          cmd_result: cmd_result.inspect,
+        )
+
+        pp rspec_output
 
         return files
       end
@@ -191,6 +202,24 @@ module RSpecQ
 
     def elapsed(since)
       Process.clock_gettime(Process::CLOCK_MONOTONIC) - since
+    end
+
+    # Prints msg to standard output and emits an event to Sentry, if the
+    # SENTRY_DSN environment variable is set.
+    def log_event(msg, level, additional={})
+      puts msg
+
+      Raven.capture_message(msg, level: level, extra: {
+        build: @build_id,
+        worker: @worker_id,
+        queue: queue.inspect,
+        files_or_dirs_to_run: @files_or_dirs_to_run,
+        populate_timings: populate_timings,
+        file_split_threshold: file_split_threshold,
+        heartbeat_updated_at: @heartbeat_updated_at,
+        object: self.inspect,
+        pid: Process.pid,
+      }.merge(additional))
     end
   end
 end
