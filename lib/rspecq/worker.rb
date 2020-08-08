@@ -156,8 +156,11 @@ module RSpecQ
     def reset_rspec_state!
       RSpec.clear_examples
 
-      # TODO: remove after https://github.com/rspec/rspec-core/pull/2723
-      RSpec.world.instance_variable_set(:@example_group_counts_by_spec_file, Hash.new(0))
+      # see https://github.com/rspec/rspec-core/pull/2723
+      if Gem::Version.new(RSpec::Core::Version::STRING) <= Gem::Version.new("3.9.1")
+        RSpec.world.instance_variable_set(
+          :@example_group_counts_by_spec_file, Hash.new(0))
+      end
 
       # RSpec.clear_examples does not reset those, which causes issues when
       # a non-example error occurs (subsequent jobs are not executed)
