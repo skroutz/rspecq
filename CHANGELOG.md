@@ -4,6 +4,8 @@ Breaking changes are prefixed with a "[BREAKING]" label.
 
 ## master (unreleased)
 
+## 0.1.0 (2020-08-27)
+
 ### Added
 
 - Sentry integration for various RSpecQ-level events [[#16](https://github.com/skroutz/rspecq/pull/16)]
