@@ -45,8 +45,9 @@ module RSpecQ
       raise "Build not finished after #{@timeout} seconds" if !finished
 
       @queue.record_build_time(tests_duration)
+
       puts summary(@queue.example_failures, @queue.non_example_errors,
-                   humanize_duration(tests_duration))
+                   @queue.flaky_jobs, humanize_duration(tests_duration))
 
       exit 1 if !@queue.build_successful?
     end
@@ -60,7 +61,7 @@ module RSpecQ
     end
 
     # We try to keep this output consistent with RSpec's original output
-    def summary(failures, errors, duration)
+    def summary(failures, errors, flaky_jobs, duration)
       failed_examples_section = "\nFailed examples:\n\n"
 
       failures.each do |_job, msg|
@@ -81,6 +82,14 @@ module RSpecQ
                  "#{errors.count} errors"
       summary << "\n\n"
       summary << "Spec execution time: #{duration}"
+
+      if !flaky_jobs.empty?
+        summary << "\n\n"
+        summary << "Flaky jobs detected (count=#{flaky_jobs.count}):\n"
+        flaky_jobs.each { |j| summary << "  #{j}\n" }
+      end
+
+      summary
     end
 
     def failure_formatted(rspec_output)
