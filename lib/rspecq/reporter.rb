@@ -46,8 +46,12 @@ module RSpecQ
 
       @queue.record_build_time(tests_duration)
 
+      flaky_jobs = @queue.flaky_jobs
+
       puts summary(@queue.example_failures, @queue.non_example_errors,
-                   @queue.flaky_jobs, humanize_duration(tests_duration))
+        flaky_jobs, humanize_duration(tests_duration))
+
+      flaky_jobs_to_sentry(flaky_jobs, tests_duration)
 
       exit 1 if !@queue.build_successful?
     end
@@ -98,6 +102,21 @@ module RSpecQ
 
     def humanize_duration(seconds)
       Time.at(seconds).utc.strftime("%H:%M:%S")
+    end
+
+    def flaky_jobs_to_sentry(jobs, build_duration)
+      return if jobs.empty?
+
+      Raven.capture_message("Flaky jobs detected", level: "warning", extra: {
+        build: @build_id,
+        build_timeout: @timeout,
+        queue: @queue.inspect,
+        object: self.inspect,
+        pid: Process.pid,
+        flaky_jobs: jobs,
+        flaky_jobs_count: jobs.count,
+        build_duration: build_duration
+      })
     end
   end
 end
