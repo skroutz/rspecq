@@ -104,6 +104,8 @@ module RSpecQ
     def try_publish_queue!(queue)
       return if !queue.become_master
 
+      log_event("testing", "error")
+
       RSpec.configuration.files_or_directories_to_run = files_or_dirs_to_run
       files_to_run = RSpec.configuration.files_to_run.map { |j| relative_path(j) }
 
