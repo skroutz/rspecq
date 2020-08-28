@@ -4,7 +4,7 @@ require "rspecq"
 
 module TestHelpers
   REDIS_HOST = "127.0.0.1".freeze
-  EXEC_CMD = "bundle exec rspecq"
+  EXEC_CMD = "bundle exec rspecq".freeze
 
   def rand_id
     SecureRandom.hex(4)
@@ -56,10 +56,15 @@ module TestHelpers
     assert_equal exp.sort, queue.processed_jobs.sort
   end
 
+  def assert_failures(exp, queue)
+    assert_equal exp.sort, queue.example_failures.keys.sort
+  end
+
   def suite_path(path)
     File.join("test", "sample_suites", path)
   end
 
+  # Returns the worker pid
   def start_worker(build_id:, worker_id: rand_id, suite:)
     Process.spawn(
       "#{EXEC_CMD} -w #{worker_id} -b #{build_id}",

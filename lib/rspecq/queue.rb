@@ -184,6 +184,7 @@ module RSpecQ
       @redis.hgetall(key_errors)
     end
 
+    # True if the build is complete, false otherwise
     def exhausted?
       return false if !published?
 
@@ -214,6 +215,19 @@ module RSpecQ
     # be procesed first.
     def unprocessed_jobs
       @redis.lrange(key_queue_unprocessed, 0, -1)
+    end
+
+    # Returns the jobs considered flaky (i.e. initially failed but passed
+    # after being retried). Must be called after the build is complete,
+    # otherwise an exception will be raised.
+    def flaky_jobs
+      raise "Queue is not yet exhausted" if !exhausted?
+
+      requeued = @redis.hkeys(key_requeues)
+
+      return [] if requeued.empty?
+
+      requeued - @redis.hkeys(key_failures)
     end
 
     # redis: STRING [STATUS_INITIALIZING, STATUS_READY]
