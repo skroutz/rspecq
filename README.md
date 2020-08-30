@@ -173,8 +173,8 @@ rejects).
 The downside of this design is that it's more complicated, since the scheduling
 of spec files happens based on timings calculated from previous runs. This
 means that RSpecQ maintains a key with the timing of each job and updates it
-on every run (if the `--timings` option was used). Also, RSpecQ has a "slow
-file threshold" which, currently has to be set manually (but this can be
+on every run (if the `--update-timings` option was used). Also, RSpecQ has a
+"slow file threshold" which, currently has to be set manually (but this can be
 improved in the future).
 
 
