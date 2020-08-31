@@ -4,6 +4,10 @@ Breaking changes are prefixed with a "[BREAKING]" label.
 
 ## master (unreleased)
 
+
+
+## 0.2.0 (2020-08-31)
+
 ### Added
 
 - Flaky jobs are now printed by the reporter in the final build output and also
