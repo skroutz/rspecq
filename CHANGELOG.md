@@ -8,6 +8,8 @@ Breaking changes are prefixed with a "[BREAKING]" label.
 
 ## 0.2.0 (2020-08-31)
 
+This is a feature release with no breaking changes.
+
 ### Added
 
 - Flaky jobs are now printed by the reporter in the final build output and also
