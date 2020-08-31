@@ -25,7 +25,7 @@ and [ci-queue](https://github.com/Shopify/ci-queue).
   the user. See [*Requeues*](#requeues).
 - Handles intermittent worker failures (e.g. network hiccups, faulty hardware etc.)
   by detecting non-responsive workers and requeing their jobs. See [*Worker failures*](#worker-failures)
-- [Sentry](https://sentry.io) integration for monitoring build-level events.
+- Sentry integration for monitoring build-level events. See [*Sentry integration*](#sentry-integration).
 - [PLANNED] StatsD integration for various build-level metrics and insights.
   See [#2](https://github.com/skroutz/rspecq/issues/2).
 
