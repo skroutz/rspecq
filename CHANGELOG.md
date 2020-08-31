@@ -4,6 +4,11 @@ Breaking changes are prefixed with a "[BREAKING]" label.
 
 ## master (unreleased)
 
+### Added
+
+- Flaky jobs are now printed by the reporter in the final build output and also
+  emitted to Sentry (if the integration is enabled) [[#26](https://github.com/skroutz/rspecq/pull/26)]
+
 ## 0.1.0 (2020-08-27)
 
 ### Added
