@@ -13,7 +13,7 @@ and [ci-queue](https://github.com/Shopify/ci-queue).
 
 ## Features
 
-- Run an RSpec suite among many workers 
+- Run an RSpec suite among many workers
   (potentially located in different hosts) in a distributed fashion,
   facilitating faster CI builds.
 - Consolidated, real-time reporting of a build's progress.
@@ -21,11 +21,11 @@ and [ci-queue](https://github.com/Shopify/ci-queue).
   automatically scheduling slow spec files as individual examples. See
   [*Spec file splitting*](#spec-file-splitting).
 - Automatic retry of test failures before being considered legit, in order to
-  rule out flakiness. See [*Requeues*](#requeues).
+  rule out flakiness. Additionally, flaky tests are detected and provided to
+  the user. See [*Requeues*](#requeues).
 - Handles intermittent worker failures (e.g. network hiccups, faulty hardware etc.)
   by detecting non-responsive workers and requeing their jobs. See [*Worker failures*](#worker-failures)
-- [Sentry](https://sentry.io) integration for monitoring important
-  RSpecQ-level events.
+- [Sentry](https://sentry.io) integration for monitoring build-level events.
 - [PLANNED] StatsD integration for various build-level metrics and insights.
   See [#2](https://github.com/skroutz/rspecq/issues/2).
 
@@ -124,9 +124,12 @@ dynamically (see #3).
 
 As a mitigation technique against flaky tests, if an example fails it will be
 put back to the queue to be picked up by another worker. This will be repeated
-up to a certain number of times (set with the `--max-requeues` option), after 
-which the example will be considered a legit failure and printed as such in the 
+up to a certain number of times (set with the `--max-requeues` option), after
+which the example will be considered a legit failure and printed as such in the
 final report.
+
+Flaky tests are also detected and printed as such in the final report. They are
+also emitted to Sentry (see [Sentry integration](#sentry-integration)).
 
 ### Worker failures
 
