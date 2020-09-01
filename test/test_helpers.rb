@@ -3,7 +3,7 @@ require "securerandom"
 require "rspecq"
 
 module TestHelpers
-  REDIS_HOST = "127.0.0.1".freeze
+  REDIS_HOST = {host: "127.0.0.1".freeze}.tap{|e| e.merge(url: ENV['REDIS_URL']) if ENV['REDIS_URL']}
   EXEC_CMD = "bundle exec rspecq"
 
   def rand_id
@@ -14,7 +14,7 @@ module TestHelpers
     w = RSpecQ::Worker.new(
       build_id: rand_id,
       worker_id: rand_id,
-      redis_host: REDIS_HOST
+      redis_opts: REDIS_HOST
     )
     w.files_or_dirs_to_run = suite_path(path)
     w
@@ -90,6 +90,7 @@ class RSpecQTest < Minitest::Test
   include TestHelpers
 
   def setup
-    Redis.new(host: REDIS_HOST).flushdb
+    puts "flush redis: #{REDIS_HOST}"if ENV["RSPECQ_DEBUG"]
+    Redis.new(REDIS_HOST).flushdb
   end
 end

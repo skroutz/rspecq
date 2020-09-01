@@ -59,10 +59,10 @@ module RSpecQ
 
     attr_reader :redis
 
-    def initialize(build_id, worker_id, redis_host)
+    def initialize(build_id, worker_id, redis_opts)
       @build_id = build_id
       @worker_id = worker_id
-      @redis = Redis.new(host: redis_host, id: worker_id)
+      @redis = Redis.new(redis_opts.merge(id: worker_id))
     end
 
     # NOTE: jobs will be processed from head to tail (lpop)
