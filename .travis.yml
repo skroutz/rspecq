@@ -2,6 +2,7 @@ branches:
   only:
     - master
     - travis
+    - test-helpers-refactor
 
 language: ruby
 
