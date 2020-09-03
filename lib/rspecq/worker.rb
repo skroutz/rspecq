@@ -3,12 +3,23 @@ require "pathname"
 require "pp"
 
 module RSpecQ
+  # A Worker, given a build ID, continuously consumes tests off the
+  # corresponding and executes them, until the queue is empty.
+  # It is also responsible for populating the initial queue.
+  #
+  # Essentially, a worker is an RSpec runner that prints the results of the
+  # tests it executes to standard output.
+  #
+  # The typical use case is to spawn many workers for a given build, thereby
+  # parallelizing the work and achieving faster build times.
+  #
+  # Workers are readers+writers of the queue.
   class Worker
     HEARTBEAT_FREQUENCY = WORKER_LIVENESS_SEC / 6
 
     # The root path or individual spec files to execute.
     #
-    # Defaults to "spec" (just like in RSpec)
+    # Defaults to "spec" (similar to RSpec)
     attr_accessor :files_or_dirs_to_run
 
     # If true, job timings will be populated in the global Redis timings key

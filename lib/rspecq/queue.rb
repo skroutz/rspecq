@@ -1,6 +1,17 @@
 require "redis"
 
 module RSpecQ
+  # Queue is the data store interface (Redis) and is used to manage the work
+  # queue for a particular build. All Redis operations happen via Queue.
+  #
+  # A queue typically contains all the data needed for a particular build to
+  # happen. These include (but are not limited to) the following:
+  #
+  # - the list of jobs (spec files and/or examples) to be executed
+  # - the failed examples along with their backtrace
+  # - the set of running jobs
+  # - previous job timing statistics used to optimally schedule the jobs
+  # - the set of executed jobs
   class Queue
     RESERVE_JOB = <<~LUA.freeze
       local queue = KEYS[1]

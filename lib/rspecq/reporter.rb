@@ -1,4 +1,13 @@
 module RSpecQ
+  # A Reporter, given a build ID, is responsible for consolidating the results
+  # from different workers and printing a complete build summary to the user,
+  # along with any failures that might have occured.
+  #
+  # The failures are printed in real-time as they occur, while the final
+  # summary is printed after the queue is empty and no tests are being
+  # executed. If the build failed, the status code of the reporter is non-zero.
+  #
+  # Reporters are readers of the queue.
   class Reporter
     def initialize(build_id:, timeout:, redis_host:)
       @build_id = build_id
