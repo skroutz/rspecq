@@ -116,16 +116,31 @@ module RSpecQ
     def flaky_jobs_to_sentry(jobs, build_duration)
       return if jobs.empty?
 
-      Raven.capture_message("Flaky jobs detected", level: "warning", extra: {
-        build: @build_id,
-        build_timeout: @timeout,
-        queue: @queue.inspect,
-        object: self.inspect,
-        pid: Process.pid,
-        flaky_jobs: jobs,
-        flaky_jobs_count: jobs.count,
-        build_duration: build_duration
-      })
+      jobs.each do |job|
+        filename = job.sub(/\[.+\]/, '')
+
+        extra = {
+          build: @build_id,
+          build_timeout: @timeout,
+          queue: @queue.inspect,
+          object: self.inspect,
+          pid: Process.pid,
+          job_path: job,
+          build_duration: build_duration
+        }
+
+        tags = {
+          flaky: true,
+          spec_file: filename
+        }
+
+        Raven.capture_message(
+          "Flaky test in #{filename}",
+          level: 'warning',
+          extra: extra,
+          tags: tags
+        )
+      end
     end
   end
 end
