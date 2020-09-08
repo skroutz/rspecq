@@ -4,6 +4,11 @@ Breaking changes are prefixed with a "[BREAKING]" label.
 
 ## master (unreleased)
 
+### Changed
+
+- Sentry Integration: Changed the way events for flaky jobs are emitted to a
+  per-flaky-job fashion. This ultimately improves grouping and filtering of the
+  flaky events in Sentry [[#33](https://github.com/skroutz/rspecq/pull/33)]
 
 
 ## 0.2.0 (2020-08-31)
