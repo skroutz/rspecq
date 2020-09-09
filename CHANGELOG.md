@@ -4,6 +4,9 @@ Breaking changes are prefixed with a "[BREAKING]" label.
 
 ## master (unreleased)
 
+
+## 0.2.1 (2020-09-09)
+
 ### Changed
 
 - Sentry Integration: Changed the way events for flaky jobs are emitted to a
