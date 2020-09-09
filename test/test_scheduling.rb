@@ -75,4 +75,25 @@ class TestScheduling < RSpecQTest
       "./test/sample_suites/scheduling_untimed/spec/foo/baz_spec.rb",
     ], worker.queue.unprocessed_jobs
   end
+
+  def test_splitting_with_deprecation_warning
+    worker = new_worker("deprecation_warning")
+    worker.populate_timings = true
+    silent { worker.work }
+
+    assert_queue_well_formed(worker.queue)
+    assert worker.queue.build_successful?
+    refute_empty worker.queue.timings
+
+    worker = new_worker("deprecation_warning")
+    worker.file_split_threshold = 0.2
+    silent { worker.work }
+
+    assert_queue_well_formed(worker.queue)
+    assert worker.queue.build_successful?
+    assert_processed_jobs([
+      "./test/sample_suites/deprecation_warning/spec/foo_spec.rb[1:1]",
+      "./test/sample_suites/deprecation_warning/spec/foo_spec.rb[1:2]",
+    ], worker.queue)
+  end
 end

@@ -1,6 +1,7 @@
 require "json"
 require "pathname"
 require "pp"
+require "open3"
 
 module RSpecQ
   # A Worker, given a build ID, continuously consumes tests off the
@@ -189,9 +190,8 @@ module RSpecQ
     # falling back to scheduling them as whole files. Their errors will be
     # reported in the normal flow when they're eventually picked up by a worker.
     def files_to_example_ids(files)
-      cmd = "DISABLE_SPRING=1 bundle exec rspec --dry-run --format json #{files.join(' ')} 2>&1"
-      out = `#{cmd}`
-      cmd_result = $?
+      cmd = "DISABLE_SPRING=1 bundle exec rspec --dry-run --format json #{files.join(' ')}"
+      out, err, cmd_result = Open3.capture3(cmd)
 
       if !cmd_result.success?
         rspec_output = begin
@@ -201,9 +201,10 @@ module RSpecQ
                        end
 
         log_event(
-          "Failed to split slow files, falling back to regular scheduling",
+          "Failed to split slow files, falling back to regular scheduling.\n #{err}",
           "error",
-          rspec_output: rspec_output,
+          rspec_stdout: rspec_output,
+          rspec_stderr: err,
           cmd_result: cmd_result.inspect,
         )
 
