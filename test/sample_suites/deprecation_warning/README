@@ -1,0 +1,2 @@
+A suite that simulates a deprecation warning printed to standard error from
+e.g. some gem or some application initializer.
