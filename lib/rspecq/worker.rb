@@ -172,36 +172,33 @@ module RSpecQ
       puts "Published queue (size=#{queue.publish(jobs, fail_fast)})"
     end
 
+    # Split a list of spec files into their individual examples.
+    #
     # NOTE: RSpec has to load the files before we can split them as individual
     # examples. In case a file to be splitted fails to be loaded
     # (e.g. contains a syntax error), we return the files unchanged, thereby
     # falling back to scheduling them as whole files. Their errors will be
     # reported in the normal flow when they're eventually picked up by a worker.
     def files_to_example_ids(files)
-      cmd = "DISABLE_SPRING=1 bundle exec rspec --dry-run --format json #{files.join(' ')}"
-      out, err, cmd_result = Open3.capture3(cmd)
+      out = StringIO.new
 
-      if !cmd_result.success?
-        rspec_output = begin
-          JSON.parse(out)
-        rescue JSON::ParserError
-          out
-        end
+      reset_rspec_state!
 
-        log_event(
-          "Failed to split slow files, falling back to regular scheduling.\n #{err}",
-          "error",
-          rspec_stdout: rspec_output,
-          rspec_stderr: err,
-          cmd_result: cmd_result.inspect
-        )
+      dry_run_before = RSpec.configuration.dry_run
 
-        pp rspec_output
+      RSpec.configuration.add_formatter(RSpec::Core::Formatters::JsonFormatter.new(out))
+      RSpec.configuration.files_or_directories_to_run = files_or_dirs_to_run
+      RSpec.configuration.dry_run = true
 
-        return files
-      end
+      opts = RSpec::Core::ConfigurationOptions.new(files)
+      result = RSpec::Core::Runner.new(opts).run($stderr, $stdout)
 
-      JSON.parse(out)["examples"].map { |e| e["id"] }
+      return files if result != 0
+
+      JSON.parse(out.string)["examples"].map { |e| e["id"] }
+    ensure
+      RSpec.configuration.dry_run = dry_run_before
+      reset_rspec_state!
     end
 
     private
@@ -225,7 +222,6 @@ module RSpecQ
       # would set this to `true`) to stop the worker
       RSpec.world.wants_to_quit = false
     end
-
 
     def relative_path(job)
       @cwd ||= Pathname.new(Dir.pwd)
