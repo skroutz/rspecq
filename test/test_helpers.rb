@@ -58,11 +58,14 @@ module TestHelpers
     end
 
     begin
-      orig = $stdout.clone
+      orig_out = $stdout.clone
+      orig_err = $stderr.clone
       $stdout.reopen(File::NULL, "w")
+      $stderr.reopen(File::NULL, "w")
       yield
     ensure
-      $stdout.reopen(orig)
+      $stdout.reopen(orig_out)
+      $stderr.reopen(orig_err)
     end
   end
 end
