@@ -5,6 +5,7 @@ require "rspecq"
 DEFAULT_REDIS_HOST = "127.0.0.1"
 DEFAULT_REPORT_TIMEOUT = 3600 # 1 hour
 DEFAULT_MAX_REQUEUES = 3
+DEFAULT_FAIL_FAST = 0
 
 def env_set?(var)
   ["1", "true"].include?(ENV[var])
@@ -83,6 +84,11 @@ OptionParser.new do |o|
     opts[:max_requeues] = v
   end
 
+  o.on("--fail-fast N", Integer, "Abort build with a non-zero status code " \
+       "after N failed examples." ) do |v|
+    opts[:fail_fast] = v
+  end
+
   o.on_tail("-h", "--help", "Show this message.") do
     puts o
     exit
@@ -103,6 +109,7 @@ opts[:report] ||= env_set?("RSPECQ_REPORT")
 opts[:report_timeout] ||= Integer(ENV["RSPECQ_REPORT_TIMEOUT"] || DEFAULT_REPORT_TIMEOUT)
 opts[:max_requeues] ||= Integer(ENV["RSPECQ_MAX_REQUEUES"] || DEFAULT_MAX_REQUEUES)
 opts[:redis_url] ||= ENV["RSPECQ_REDIS_URL"]
+opts[:fail_fast] ||= Integer(ENV["RSPECQ_FAIL_FAST"] || DEFAULT_FAIL_FAST)
 
 raise OptionParser::MissingArgument.new(:build) if opts[:build].nil?
 raise OptionParser::MissingArgument.new(:worker) if !opts[:report] && opts[:worker].nil?
@@ -134,5 +141,6 @@ else
   worker.populate_timings = opts[:timings]
   worker.file_split_threshold = opts[:file_split_threshold]
   worker.max_requeues = opts[:max_requeues]
+  worker.fail_fast = opts[:fail_fast]
   worker.work
 end

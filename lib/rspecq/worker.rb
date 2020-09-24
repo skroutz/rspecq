@@ -40,12 +40,19 @@ module RSpecQ
     # Defaults to 3
     attr_accessor :max_requeues
 
+    # Stop the execution after N failed tests. Do not stop at any point when
+    # set to 0.
+    #
+    # Defaults to 0
+    attr_accessor :fail_fast
+
     attr_reader :queue
 
     def initialize(build_id:, worker_id:, redis_opts:)
       @build_id = build_id
       @worker_id = worker_id
       @queue = Queue.new(build_id, worker_id, redis_opts)
+      @fail_fast = 0
       @files_or_dirs_to_run = "spec"
       @populate_timings = false
       @file_split_threshold = 999999
@@ -68,6 +75,8 @@ module RSpecQ
         # we have to bootstrap this so that it can be used in the first call
         # to `requeue_lost_job` inside the work loop
         update_heartbeat
+
+        return if queue.build_failed_fast?
 
         lost = queue.requeue_lost_job
         puts "Requeued lost job: #{lost}" if lost
@@ -121,7 +130,7 @@ module RSpecQ
 
       timings = queue.timings
       if timings.empty?
-        q_size = queue.publish(files_to_run.shuffle)
+        q_size = queue.publish(files_to_run.shuffle, fail_fast)
         log_event(
           "No timings found! Published queue in random order (size=#{q_size})",
           "warning"
@@ -160,7 +169,7 @@ module RSpecQ
       # sort jobs based on their timings (slowest to be processed first)
       jobs = jobs.sort_by { |_j, t| -t }.map(&:first)
 
-      puts "Published queue (size=#{queue.publish(jobs)})"
+      puts "Published queue (size=#{queue.publish(jobs, fail_fast)})"
     end
 
     private
