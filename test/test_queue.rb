@@ -6,7 +6,7 @@ class TestQueue < RSpecQTest
 
     Process.wait(start_worker(build_id: build_id, suite: "flaky_job_detection"))
 
-    queue = RSpecQ::Queue.new(build_id, "foo", REDIS_HOST)
+    queue = RSpecQ::Queue.new(build_id, "foo", REDIS_OPTS)
 
     assert_queue_well_formed(queue)
     refute queue.build_successful?

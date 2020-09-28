@@ -6,6 +6,6 @@ class RSpecQTest < Minitest::Test
   include TestHelpers::Assertions
 
   def setup
-    Redis.new(host: REDIS_HOST).flushdb
+    Redis.new(REDIS_OPTS).flushdb
   end
 end
