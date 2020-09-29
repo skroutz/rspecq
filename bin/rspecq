@@ -3,7 +3,6 @@ require "optparse"
 require "rspecq"
 
 DEFAULT_REDIS_HOST = "127.0.0.1"
-DEFAULT_REDIS_URL = "redis://127.0.0.1:6379/0"
 DEFAULT_REPORT_TIMEOUT = 3600 # 1 hour
 DEFAULT_MAX_REQUEUES = 3
 
@@ -48,8 +47,8 @@ OptionParser.new do |o|
     opts[:redis_host] = v
   end
 
-  o.on("--redis-url REDIS_URL", "The URL of the Redis host to connect to " \
-       "(ex: #{DEFAULT_REDIS_URL}).") do |v|
+  o.on("--redis-url URL", "The URL of the Redis host to connect to " \
+       "(e.g.: redis://127.0.0.1:6379/0).") do |v|
     opts[:redis_url] = v
   end
 
@@ -107,8 +106,11 @@ opts[:max_requeues] ||= Integer(ENV["RSPECQ_MAX_REQUEUES"] || DEFAULT_MAX_REQUEU
 raise OptionParser::MissingArgument.new(:build) if opts[:build].nil?
 raise OptionParser::MissingArgument.new(:worker) if !opts[:report] && opts[:worker].nil?
 
-redis_opts = {host: opts[:redis_host]}
-redis_opts[:url] = opts[:redis_url] if opts[:redis_url]
+redis_opts = {
+  host: opts[:redis_host]
+}
+redis_url = ENV["RSPECQ_REDIS_URL"] || opts[:redis_url]
+redis_opts[:url] = redis_url if redis_url
 
 if opts[:report]
   reporter = RSpecQ::Reporter.new(
