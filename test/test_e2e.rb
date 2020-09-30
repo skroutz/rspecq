@@ -7,14 +7,19 @@ class TestEndToEnd < RSpecQTest
     refute queue.build_successful?
 
     assert_processed_jobs [
-      "./spec/foo_spec.rb",
-      "./spec/bar_spec.rb",
-      "./spec/bar_spec.rb[1:2]",
+      "./spec/fail_1_spec.rb",
+      "./spec/fail_1_spec.rb[1:2]",
+      "./spec/fail_2_spec.rb",
+      "./spec/fail_2_spec.rb[1:2]",
+      "./spec/success_spec.rb",
     ], queue
 
-   assert_equal 3 + 3, queue.example_count
+   assert_equal 3 + 3 + 5, queue.example_count
 
-   assert_equal({ "./spec/bar_spec.rb[1:2]" => "3" }, queue.requeued_jobs)
+   assert_equal({
+     "./spec/fail_1_spec.rb[1:2]" => "3",
+     "./spec/fail_2_spec.rb[1:2]" => "3",
+   }, queue.requeued_jobs)
   end
 
   def test_passing_suite
