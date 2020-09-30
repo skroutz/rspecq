@@ -38,7 +38,7 @@ OptionParser.new do |o|
 
   o.on("-r", "--redis HOST", "Redis host to connect to " \
        "(default: #{DEFAULT_REDIS_HOST}).") do |v|
-    puts "DEPRECATED: Use --redis-host or --redis-url instead"
+    puts "--redis is deprecated. Use --redis-host or --redis-url instead"
     opts[:redis_host] = v
   end
 
@@ -102,15 +102,14 @@ opts[:file_split_threshold] ||= Integer(ENV["RSPECQ_FILE_SPLIT_THRESHOLD"] || 99
 opts[:report] ||= env_set?("RSPECQ_REPORT")
 opts[:report_timeout] ||= Integer(ENV["RSPECQ_REPORT_TIMEOUT"] || DEFAULT_REPORT_TIMEOUT)
 opts[:max_requeues] ||= Integer(ENV["RSPECQ_MAX_REQUEUES"] || DEFAULT_MAX_REQUEUES)
+opts[:redis_url] ||= ENV["RSPECQ_REDIS_URL"]
 
 raise OptionParser::MissingArgument.new(:build) if opts[:build].nil?
 raise OptionParser::MissingArgument.new(:worker) if !opts[:report] && opts[:worker].nil?
 
-redis_opts = {
-  host: opts[:redis_host]
-}
-redis_url = ENV["RSPECQ_REDIS_URL"] || opts[:redis_url]
-redis_opts[:url] = redis_url if redis_url
+redis_opts = {}
+redis_opts[:host] = opts[:redis_host] if opts[:redis_host]
+redis_opts[:url] = opts[:redis_url] if opts[:redis_url]
 
 if opts[:report]
   reporter = RSpecQ::Reporter.new(
