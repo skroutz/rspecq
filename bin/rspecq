@@ -38,7 +38,18 @@ OptionParser.new do |o|
 
   o.on("-r", "--redis HOST", "Redis host to connect to " \
        "(default: #{DEFAULT_REDIS_HOST}).") do |v|
+    puts "--redis is deprecated. Use --redis-host or --redis-url instead"
     opts[:redis_host] = v
+  end
+
+  o.on("--redis-host HOST", "Redis host to connect to " \
+       "(default: #{DEFAULT_REDIS_HOST}).") do |v|
+    opts[:redis_host] = v
+  end
+
+  o.on("--redis-url URL", "The URL of the Redis host to connect to " \
+       "(e.g.: redis://127.0.0.1:6379/0).") do |v|
+    opts[:redis_url] = v
   end
 
   o.on("--update-timings", "Update the global job timings key with the "     \
@@ -91,15 +102,20 @@ opts[:file_split_threshold] ||= Integer(ENV["RSPECQ_FILE_SPLIT_THRESHOLD"] || 99
 opts[:report] ||= env_set?("RSPECQ_REPORT")
 opts[:report_timeout] ||= Integer(ENV["RSPECQ_REPORT_TIMEOUT"] || DEFAULT_REPORT_TIMEOUT)
 opts[:max_requeues] ||= Integer(ENV["RSPECQ_MAX_REQUEUES"] || DEFAULT_MAX_REQUEUES)
+opts[:redis_url] ||= ENV["RSPECQ_REDIS_URL"]
 
 raise OptionParser::MissingArgument.new(:build) if opts[:build].nil?
 raise OptionParser::MissingArgument.new(:worker) if !opts[:report] && opts[:worker].nil?
+
+redis_opts = {}
+redis_opts[:host] = opts[:redis_host] if opts[:redis_host]
+redis_opts[:url] = opts[:redis_url] if opts[:redis_url]
 
 if opts[:report]
   reporter = RSpecQ::Reporter.new(
     build_id: opts[:build],
     timeout: opts[:report_timeout],
-    redis_host: opts[:redis_host],
+    redis_opts: redis_opts,
   )
 
   reporter.report
@@ -107,7 +123,7 @@ else
   worker = RSpecQ::Worker.new(
     build_id: opts[:build],
     worker_id: opts[:worker],
-    redis_host: opts[:redis_host]
+    redis_opts: redis_opts
   )
 
   worker.files_or_dirs_to_run = ARGV[0] if ARGV[0]

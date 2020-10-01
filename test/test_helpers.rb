@@ -3,7 +3,7 @@ require "securerandom"
 require "rspecq"
 
 module TestHelpers
-  REDIS_HOST = "127.0.0.1".freeze
+  REDIS_OPTS = {host: "127.0.0.1"}.freeze
   EXEC_CMD = "bundle exec rspecq".freeze
 
   def rand_id
@@ -14,7 +14,7 @@ module TestHelpers
     w = RSpecQ::Worker.new(
       build_id: rand_id,
       worker_id: rand_id,
-      redis_host: REDIS_HOST
+      redis_opts: REDIS_OPTS
     )
     w.files_or_dirs_to_run = suite_path(path)
     w
@@ -31,7 +31,7 @@ module TestHelpers
 
     assert_equal 0, $?.exitstatus
 
-    queue = RSpecQ::Queue.new(build_id, worker_id, REDIS_HOST)
+    queue = RSpecQ::Queue.new(build_id, worker_id, REDIS_OPTS)
     assert_queue_well_formed(queue)
 
     return queue

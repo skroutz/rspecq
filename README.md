@@ -64,7 +64,9 @@ USAGE:
 OPTIONS:
     -b, --build ID                   A unique identifier for the build. Should be common among workers participating in the same build.
     -w, --worker ID                  An identifier for the worker. Workers participating in the same build should have distinct IDs.
-    -r, --redis HOST                 Redis host to connect to (default: 127.0.0.1).
+    -r, --redis HOST                 --redis is deprecated. Use --redis-host or --redis-url instead. Redis host to connect to (default: 127.0.0.1).
+        --redis-host HOST            Redis host to connect to (default: 127.0.0.1).
+        --redis-url URL              Redis URL to connect to (e.g.: redis://127.0.0.1:6379/0).
         --update-timings             Update the global job timings key with the timings of this build. Note: This key is used as the basis for job scheduling.
         --file-split-threshold N     Split spec files slower than N seconds and schedule them as individual examples.
         --report                     Enable reporter mode: do not pull tests off the queue; instead print build progress and exit when it's finished.
