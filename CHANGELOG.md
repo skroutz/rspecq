@@ -4,6 +4,12 @@ Breaking changes are prefixed with a "[BREAKING]" label.
 
 ## master (unreleased)
 
+### Added
+
+- Builds can be configured to terminate after a specified number of failures,
+  using the `--fail-fast` option.
+
+
 ## 0.3.0 (2020-10-05)
 
 ### Added

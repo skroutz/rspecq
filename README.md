@@ -73,6 +73,7 @@ OPTIONS:
                                      Exits with a non-zero status code if there were any failures.
         --report-timeout N           Fail if build is not finished after N seconds. Only applicable if --report is enabled (default: 3600).
         --max-requeues N             Retry failed examples up to N times before considering them legit failures (default: 3).
+        --fail-fast N                Abort build with a non-zero status code after N failed examples.
     -h, --help                       Show this message.
     -v, --version                    Print the version and exit.
 ```
@@ -132,6 +133,16 @@ final report.
 
 Flaky tests are also detected and printed as such in the final report. They are
 also emitted to Sentry (see [Sentry integration](#sentry-integration)).
+
+### Fail-fast
+
+In order to prevent large suites running for a long time with a lot of
+failures, a threshold can be set to control the number of failed examples that
+will render the build unsuccessful. This is in par with RSpec's
+[--fail-fast](https://relishapp.com/rspec/rspec-core/docs/command-line/fail-fast-option).
+
+This feature is disabled by default, and can be controlled via the
+`--fail-fast` command line option.
 
 ### Worker failures
 

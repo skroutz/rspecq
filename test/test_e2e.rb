@@ -5,16 +5,24 @@ class TestEndToEnd < RSpecQTest
     queue = exec_build("failing_suite")
 
     refute queue.build_successful?
+    assert queue.fail_fast.zero?
+    refute queue.build_failed_fast?
 
+    assert_empty queue.unprocessed_jobs
     assert_processed_jobs [
-      "./spec/foo_spec.rb",
-      "./spec/bar_spec.rb",
-      "./spec/bar_spec.rb[1:2]",
+      "./spec/fail_1_spec.rb",
+      "./spec/fail_1_spec.rb[1:2]",
+      "./spec/fail_2_spec.rb",
+      "./spec/fail_2_spec.rb[1:2]",
+      "./spec/success_spec.rb",
     ], queue
 
-   assert_equal 3 + 3, queue.example_count
+   assert_equal 3 + 3 + 5, queue.example_count
 
-   assert_equal({ "./spec/bar_spec.rb[1:2]" => "3" }, queue.requeued_jobs)
+   assert_equal({
+     "./spec/fail_1_spec.rb[1:2]" => "3",
+     "./spec/fail_2_spec.rb[1:2]" => "3",
+   }, queue.requeued_jobs)
   end
 
   def test_passing_suite
@@ -103,5 +111,21 @@ class TestEndToEnd < RSpecQTest
       "./spec/slow_spec.rb[1:1]",
       "./spec/fast_spec.rb",
     ], queue)
+  end
+
+  def test_suite_with_failures_and_fail_fast
+    queue = exec_build("failing_suite", "--fail-fast 1")
+
+    assert_equal 1, queue.fail_fast
+    assert queue.build_failed_fast?
+    refute queue.build_successful?
+    assert_equal queue.fail_fast, queue.example_failures.length +
+                                  queue.non_example_errors.length
+
+    # 1 <= unprocessed_jobs <= 2
+    # Either Success, Fail (after N requeues), or Fail (after N requeues)
+    assert_includes [1, 2], queue.unprocessed_jobs.length
+
+    assert_includes [2, 3], queue.processed_jobs.length
   end
 end

@@ -41,7 +41,7 @@ module RSpecQ
             puts failure_formatted(rspec_output)
           end
 
-          if !@queue.exhausted?
+          unless @queue.exhausted? || @queue.build_failed_fast?
             sleep 1
             next
           end
@@ -83,6 +83,13 @@ module RSpecQ
       end
 
       summary = ""
+      if @queue.build_failed_fast?
+        summary << "\n\n"
+        summary << "The limit of #{@queue.fail_fast} failures has been reached\n"
+        summary << "Aborting..."
+        summary << "\n"
+      end
+
       summary << failed_examples_section if !failures.empty?
 
       errors.each { |_job, msg| summary << msg }

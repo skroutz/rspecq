@@ -77,8 +77,9 @@ module RSpecQ
     end
 
     # NOTE: jobs will be processed from head to tail (lpop)
-    def publish(jobs)
+    def publish(jobs, fail_fast = 0)
       @redis.multi do
+        @redis.hset(key_queue_config, 'fail_fast', fail_fast)
         @redis.rpush(key_queue_unprocessed, jobs)
         @redis.set(key_queue_status, STATUS_READY)
       end.first
@@ -232,7 +233,9 @@ module RSpecQ
     # after being retried). Must be called after the build is complete,
     # otherwise an exception will be raised.
     def flaky_jobs
-      raise "Queue is not yet exhausted" if !exhausted?
+      if !exhausted? && !build_failed_fast?
+        raise "Queue is not yet exhausted"
+      end
 
       requeued = @redis.hkeys(key_requeues)
 
@@ -241,9 +244,36 @@ module RSpecQ
       requeued - @redis.hkeys(key_failures)
     end
 
+    # Returns the number of failures that will trigger the build to fail-fast.
+    # Returns 0 if this feature is disabled and nil if the Queue is not yet
+    # published
+    def fail_fast
+      return nil unless published?
+
+      @fail_fast ||= Integer(@redis.hget(key_queue_config, 'fail_fast'))
+    end
+
+    # Returns true if the number of failed tests, has surpassed the threshold
+    # to render the run unsuccessful and the build should be terminated.
+    def build_failed_fast?
+      if fail_fast.nil? || fail_fast.zero?
+        return false
+      end
+
+      @redis.multi do
+        @redis.hlen(key_failures)
+        @redis.hlen(key_errors)
+      end.inject(:+) >= fail_fast
+    end
+
     # redis: STRING [STATUS_INITIALIZING, STATUS_READY]
     def key_queue_status
       key("queue", "status")
+    end
+
+    # redis:  HASH<config_key => config_value>
+    def key_queue_config
+      key("queue", "config")
     end
 
     # redis: LIST<job>
