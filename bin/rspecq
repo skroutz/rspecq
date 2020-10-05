@@ -108,8 +108,12 @@ raise OptionParser::MissingArgument.new(:build) if opts[:build].nil?
 raise OptionParser::MissingArgument.new(:worker) if !opts[:report] && opts[:worker].nil?
 
 redis_opts = {}
-redis_opts[:host] = opts[:redis_host] if opts[:redis_host]
-redis_opts[:url] = opts[:redis_url] if opts[:redis_url]
+
+if opts[:redis_url]
+  redis_opts[:url] = opts[:redis_url]
+else
+  redis_opts[:host] = opts[:redis_host]
+end
 
 if opts[:report]
   reporter = RSpecQ::Reporter.new(
