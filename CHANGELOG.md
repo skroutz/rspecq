@@ -4,12 +4,17 @@ Breaking changes are prefixed with a "[BREAKING]" label.
 
 ## master (unreleased)
 
+### Added
+
+- Providing a Redis URL is now possible using the `--redis-url` option
+  [[#40](https://github.com/skroutz/rspecq/pull/40)]
+
 ## 0.2.2 (2020-09-10)
 
 ### Fixed
 - Worker would fail if application code was writing to stderr 
  [[#35](https://github.com/skroutz/rspecq/pull/35)]
-  
+
 ## 0.2.1 (2020-09-09)
 
 ### Changed
