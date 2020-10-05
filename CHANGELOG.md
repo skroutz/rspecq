@@ -9,6 +9,11 @@ Breaking changes are prefixed with a "[BREAKING]" label.
 - Providing a Redis URL is now possible using the `--redis-url` option
   [[#40](https://github.com/skroutz/rspecq/pull/40)]
 
+### Changed
+
+- [DEPRECATION] The `--redis` option is now deprecated. Use `--redis-host`
+  instead [[#40](https://github.com/skroutz/rspecq/pull/40)]
+
 ## 0.2.2 (2020-09-10)
 
 ### Fixed
