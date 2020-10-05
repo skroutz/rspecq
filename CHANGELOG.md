@@ -4,6 +4,8 @@ Breaking changes are prefixed with a "[BREAKING]" label.
 
 ## master (unreleased)
 
+## 0.3.0 (2020-10-05)
+
 ### Added
 
 - Providing a Redis URL is now possible using the `--redis-url` option
