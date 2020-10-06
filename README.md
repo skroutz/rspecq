@@ -28,6 +28,7 @@ and [ci-queue](https://github.com/Shopify/ci-queue).
 - Sentry integration for monitoring build-level events. See [*Sentry integration*](#sentry-integration).
 - [PLANNED] StatsD integration for various build-level metrics and insights.
   See [#2](https://github.com/skroutz/rspecq/issues/2).
+- Automatic termination of builds after a certain amount of failures. See [*Fail-fast*](#fail-fast).
 
 ## Usage
 
