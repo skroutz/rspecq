@@ -4,6 +4,8 @@ Breaking changes are prefixed with a "[BREAKING]" label.
 
 ## master (unreleased)
 
+## 0.4.0 (2020-10-07)
+
 ### Added
 
 - Builds can be configured to terminate after a specified number of failures,
