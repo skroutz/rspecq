@@ -29,4 +29,5 @@ jobs:
 services: redis-server
 
 script:
+  - bundle exec rubocop
   - bundle exec rake
