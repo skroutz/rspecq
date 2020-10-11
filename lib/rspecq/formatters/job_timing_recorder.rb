@@ -1,5 +1,8 @@
 module RSpecQ
   module Formatters
+    # Persists each job's timing (in seconds). Those timings are used when
+    # determining the ordering in which jobs are scheduled (slower jobs will
+    # be enqueued first).
     class JobTimingRecorder
       def initialize(queue, job)
         @queue = queue

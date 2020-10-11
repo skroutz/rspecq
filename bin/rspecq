@@ -2,7 +2,7 @@
 require "optparse"
 require "rspecq"
 
-DEFAULT_REDIS_HOST = "127.0.0.1"
+DEFAULT_REDIS_HOST = "127.0.0.1".freeze
 DEFAULT_REPORT_TIMEOUT = 3600 # 1 hour
 DEFAULT_MAX_REQUEUES = 3
 DEFAULT_FAIL_FAST = 0
@@ -66,7 +66,7 @@ OptionParser.new do |o|
 
   o.on("--report", "Enable reporter mode: do not pull tests off the queue; " \
                    "instead print build progress and exit when it's "        \
-                   "finished.\n#{o.summary_indent*9} "                       \
+                   "finished.\n#{o.summary_indent * 9} "                       \
                    "Exits with a non-zero status code if there were any "    \
                    "failures.") do |v|
     opts[:report] = v
@@ -85,7 +85,7 @@ OptionParser.new do |o|
   end
 
   o.on("--fail-fast N", Integer, "Abort build with a non-zero status code " \
-       "after N failed examples." ) do |v|
+       "after N failed examples.") do |v|
     opts[:fail_fast] = v
   end
 
@@ -104,15 +104,17 @@ opts[:build] ||= ENV["RSPECQ_BUILD"]
 opts[:worker] ||= ENV["RSPECQ_WORKER"]
 opts[:redis_host] ||= ENV["RSPECQ_REDIS"] || DEFAULT_REDIS_HOST
 opts[:timings] ||= env_set?("RSPECQ_UPDATE_TIMINGS")
-opts[:file_split_threshold] ||= Integer(ENV["RSPECQ_FILE_SPLIT_THRESHOLD"] || 9999999)
+opts[:file_split_threshold] ||= Integer(ENV["RSPECQ_FILE_SPLIT_THRESHOLD"] || 9_999_999)
 opts[:report] ||= env_set?("RSPECQ_REPORT")
 opts[:report_timeout] ||= Integer(ENV["RSPECQ_REPORT_TIMEOUT"] || DEFAULT_REPORT_TIMEOUT)
 opts[:max_requeues] ||= Integer(ENV["RSPECQ_MAX_REQUEUES"] || DEFAULT_MAX_REQUEUES)
 opts[:redis_url] ||= ENV["RSPECQ_REDIS_URL"]
 opts[:fail_fast] ||= Integer(ENV["RSPECQ_FAIL_FAST"] || DEFAULT_FAIL_FAST)
 
+# rubocop:disable Style/RaiseArgs, Layout/EmptyLineAfterGuardClause
 raise OptionParser::MissingArgument.new(:build) if opts[:build].nil?
 raise OptionParser::MissingArgument.new(:worker) if !opts[:report] && opts[:worker].nil?
+# rubocop:enable Style/RaiseArgs, Layout/EmptyLineAfterGuardClause
 
 redis_opts = {}
 
@@ -126,7 +128,7 @@ if opts[:report]
   reporter = RSpecQ::Reporter.new(
     build_id: opts[:build],
     timeout: opts[:report_timeout],
-    redis_opts: redis_opts,
+    redis_opts: redis_opts
   )
 
   reporter.report

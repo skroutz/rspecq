@@ -14,4 +14,3 @@ module RSpecQ
     end
   end
 end
-

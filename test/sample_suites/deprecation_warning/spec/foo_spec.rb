@@ -1,4 +1,6 @@
+# rubocop:disable Style/StderrPuts
 $stderr.puts "I'm a warning!"
+# rubocop:enable Style/StderrPuts
 
 describe "A slow spec file to be splitted" do
   it do

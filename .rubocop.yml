@@ -1,0 +1,49 @@
+AllCops:
+  NewCops: enable
+
+Metrics:
+  Enabled: false
+
+Style/WordArray:
+  EnforcedStyle: brackets
+
+Style/StringLiterals:
+  EnforcedStyle: double_quotes
+
+Style/GlobalVars:
+  Exclude:
+    - test/sample_suites/flakey_suite/**/*.rb
+    - test/sample_suites/flaky_job_detection/**/*.rb
+
+Style/SpecialGlobalVars:
+  Enabled: false
+
+Style/IfUnlessModifier:
+  Enabled: false
+
+Style/GuardClause:
+  Enabled: false
+
+Style/TrailingCommaInArrayLiteral:
+  Enabled: false
+
+Style/FrozenStringLiteralComment:
+  Enabled: false
+
+Style/NegatedIf:
+  Enabled: false
+
+Style/NumericPredicate:
+  Enabled: false
+
+Layout/FirstArrayElementIndentation:
+  Enabled: false
+
+Layout/ArgumentAlignment:
+  Enabled: false
+
+Gemspec/RequiredRubyVersion:
+  Enabled: false
+
+Naming/MethodParameterName:
+  Enabled: false

@@ -55,7 +55,7 @@ module RSpecQ
       @fail_fast = 0
       @files_or_dirs_to_run = "spec"
       @populate_timings = false
-      @file_split_threshold = 999999
+      @file_split_threshold = 999_999
       @heartbeat_updated_at = nil
       @max_requeues = 3
 
@@ -98,7 +98,7 @@ module RSpecQ
         # reconfigure rspec
         RSpec.configuration.detail_color = :magenta
         RSpec.configuration.seed = srand && srand % 0xFFFF
-        RSpec.configuration.backtrace_formatter.filter_gem('rspecq')
+        RSpec.configuration.backtrace_formatter.filter_gem("rspecq")
         RSpec.configuration.add_formatter(Formatters::FailureRecorder.new(queue, job, max_requeues))
         RSpec.configuration.add_formatter(Formatters::ExampleCountRecorder.new(queue))
         RSpec.configuration.add_formatter(Formatters::WorkerHeartbeatRecorder.new(self))
@@ -155,7 +155,7 @@ module RSpecQ
         jobs.concat(files_to_run)
       end
 
-      default_timing = timings.values[timings.values.size/2]
+      default_timing = timings.values[timings.values.size / 2]
 
       # assign timings (based on previous runs) to all jobs
       jobs = jobs.each_with_object({}) do |j, h|
@@ -180,7 +180,8 @@ module RSpecQ
       # see https://github.com/rspec/rspec-core/pull/2723
       if Gem::Version.new(RSpec::Core::Version::STRING) <= Gem::Version.new("3.9.1")
         RSpec.world.instance_variable_set(
-          :@example_group_counts_by_spec_file, Hash.new(0))
+          :@example_group_counts_by_spec_file, Hash.new(0)
+        )
       end
 
       # RSpec.clear_examples does not reset those, which causes issues when
@@ -204,17 +205,17 @@ module RSpecQ
 
       if !cmd_result.success?
         rspec_output = begin
-                         JSON.parse(out)
-                       rescue JSON::ParserError
-                         out
-                       end
+          JSON.parse(out)
+        rescue JSON::ParserError
+          out
+        end
 
         log_event(
           "Failed to split slow files, falling back to regular scheduling.\n #{err}",
           "error",
           rspec_stdout: rspec_output,
           rspec_stderr: err,
-          cmd_result: cmd_result.inspect,
+          cmd_result: cmd_result.inspect
         )
 
         pp rspec_output
@@ -236,7 +237,7 @@ module RSpecQ
 
     # Prints msg to standard output and emits an event to Sentry, if the
     # SENTRY_DSN environment variable is set.
-    def log_event(msg, level, additional={})
+    def log_event(msg, level, additional = {})
       puts msg
 
       Raven.capture_message(msg, level: level, extra: {
@@ -247,8 +248,8 @@ module RSpecQ
         populate_timings: populate_timings,
         file_split_threshold: file_split_threshold,
         heartbeat_updated_at: @heartbeat_updated_at,
-        object: self.inspect,
-        pid: Process.pid,
+        object: inspect,
+        pid: Process.pid
       }.merge(additional))
     end
   end

@@ -16,7 +16,7 @@ module RSpecQ
 
       # We want feedback to be immediattely printed to CI users, so
       # we disable buffering.
-      STDOUT.sync = true
+      $stdout.sync = true
     end
 
     def report
@@ -28,7 +28,7 @@ module RSpecQ
       failure_heading_printed = false
 
       tests_duration = measure_duration do
-        @timeout.times do |i|
+        @timeout.times do
           @queue.example_failures.each do |job, rspec_output|
             next if reported_failures[job]
 
@@ -124,13 +124,13 @@ module RSpecQ
       return if jobs.empty?
 
       jobs.each do |job|
-        filename = job.sub(/\[.+\]/, '')
+        filename = job.sub(/\[.+\]/, "")
 
         extra = {
           build: @build_id,
           build_timeout: @timeout,
           queue: @queue.inspect,
-          object: self.inspect,
+          object: inspect,
           pid: Process.pid,
           job_path: job,
           build_duration: build_duration
@@ -143,7 +143,7 @@ module RSpecQ
 
         Raven.capture_message(
           "Flaky test in #{filename}",
-          level: 'warning',
+          level: "warning",
           extra: extra,
           tags: tags
         )

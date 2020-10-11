@@ -13,7 +13,7 @@ Gem::Specification.new do |s|
   s.license     = "MIT"
 
   if ENV["CI"] && ENV["RSPEC_CORE"]
-    s.add_dependency "rspec-core", "#{ENV['RSPEC_CORE']}"
+    s.add_dependency "rspec-core", ENV["RSPEC_CORE"]
   else
     s.add_dependency "rspec-core"
   end
@@ -21,9 +21,9 @@ Gem::Specification.new do |s|
   s.add_dependency "redis"
   s.add_dependency "sentry-raven"
 
-  s.add_development_dependency "rake"
-  s.add_development_dependency "pry-byebug"
   s.add_development_dependency "minitest"
+  s.add_development_dependency "pry-byebug"
+  s.add_development_dependency "rake"
   s.add_development_dependency "rspec"
   s.add_development_dependency "rubocop", "~> 0.93.0"
 end

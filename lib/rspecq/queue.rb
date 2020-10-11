@@ -79,7 +79,7 @@ module RSpecQ
     # NOTE: jobs will be processed from head to tail (lpop)
     def publish(jobs, fail_fast = 0)
       @redis.multi do
-        @redis.hset(key_queue_config, 'fail_fast', fail_fast)
+        @redis.hset(key_queue_config, "fail_fast", fail_fast)
         @redis.rpush(key_queue_unprocessed, jobs)
         @redis.set(key_queue_status, STATUS_READY)
       end.first
@@ -131,7 +131,7 @@ module RSpecQ
       @redis.eval(
         REQUEUE_JOB,
         keys: [key_queue_unprocessed, key_requeues],
-        argv: [job, max_requeues],
+        argv: [job, max_requeues]
       )
     end
 
@@ -210,9 +210,10 @@ module RSpecQ
       @redis.get(key_queue_status) == STATUS_READY
     end
 
-    def wait_until_published(timeout=30)
+    def wait_until_published(timeout = 30)
       (timeout * 10).times do
         return if published?
+
         sleep 0.1
       end
 
@@ -250,7 +251,7 @@ module RSpecQ
     def fail_fast
       return nil unless published?
 
-      @fail_fast ||= Integer(@redis.hget(key_queue_config, 'fail_fast'))
+      @fail_fast ||= Integer(@redis.hget(key_queue_config, "fail_fast"))
     end
 
     # Returns true if the number of failed tests, has surpassed the threshold

@@ -20,7 +20,8 @@ class TestQueue < RSpecQTest
        "./spec/flaky_spec.rb[1:1]",
        "./spec/flaky_spec.rb[1:3]",
        "./spec/legit_failure_spec.rb",
-       "./spec/legit_failure_spec.rb[1:3]"], queue)
+       "./spec/legit_failure_spec.rb[1:3]"], queue
+    )
 
     assert_failures(["./spec/legit_failure_spec.rb[1:3]"], queue)
   end

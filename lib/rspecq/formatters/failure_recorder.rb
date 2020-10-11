@@ -1,5 +1,10 @@
 module RSpecQ
   module Formatters
+    # Persists failed examples information (i.e. message and backtrace), so
+    # that they can be reported to the end user by the Reporter.
+    #
+    # Also persists non-example error information (e.g. a syntax error that
+    # in a spec file).
     class FailureRecorder
       def initialize(queue, job, max_requeues)
         @queue = queue
@@ -33,16 +38,19 @@ module RSpecQ
         end
 
         presenter = RSpec::Core::Formatters::ExceptionPresenter.new(
-          example.exception, example)
+          example.exception, example
+        )
 
         msg = presenter.fully_formatted(nil, @colorizer)
         msg << "\n"
         msg << @colorizer.wrap(
           "bin/rspec #{example.location_rerun_argument}",
-          RSpec.configuration.failure_color)
+          RSpec.configuration.failure_color
+        )
 
         msg << @colorizer.wrap(
-          " # #{example.full_description}", RSpec.configuration.detail_color)
+          " # #{example.full_description}", RSpec.configuration.detail_color
+        )
 
         @queue.record_example_failure(notification.example.id, msg)
       end

@@ -3,7 +3,7 @@ require "securerandom"
 require "rspecq"
 
 module TestHelpers
-  REDIS_OPTS = {host: "127.0.0.1"}.freeze
+  REDIS_OPTS = { host: "127.0.0.1" }.freeze
   EXEC_CMD = "bundle exec rspecq".freeze
 
   def rand_id
@@ -20,7 +20,7 @@ module TestHelpers
     w
   end
 
-  def exec_build(path, args="")
+  def exec_build(path, args = "")
     worker_id = rand_id
     build_id = rand_id
 
@@ -34,7 +34,7 @@ module TestHelpers
     queue = RSpecQ::Queue.new(build_id, worker_id, REDIS_OPTS)
     assert_queue_well_formed(queue)
 
-    return queue
+    queue
   end
 
   def suite_path(path)
@@ -42,11 +42,11 @@ module TestHelpers
   end
 
   # Returns the worker pid
-  def start_worker(build_id:, worker_id: rand_id, suite:)
+  def start_worker(build_id:, suite:, worker_id: rand_id)
     Process.spawn(
       "#{EXEC_CMD} -w #{worker_id} -b #{build_id}",
       chdir: suite_path(suite),
-      out: (ENV["RSPECQ_DEBUG"] ? :out : File::NULL),
+      out: (ENV["RSPECQ_DEBUG"] ? :out : File::NULL)
     )
   end
 
@@ -59,7 +59,7 @@ module TestHelpers
 
     begin
       orig = $stdout.clone
-      $stdout.reopen(File::NULL, 'w')
+      $stdout.reopen(File::NULL, "w")
       yield
     ensure
       $stdout.reopen(orig)

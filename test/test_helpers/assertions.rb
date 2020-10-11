@@ -1,14 +1,15 @@
 module TestHelpers
   module Assertions
-    def assert_queue_well_formed(queue, msg=nil)
+    def assert_queue_well_formed(queue, _msg = nil)
       redis = queue.redis
       heartbeats = redis.zrange(
-        queue.send(:key_worker_heartbeats), 0, -1, withscores: true)
+        queue.send(:key_worker_heartbeats), 0, -1, withscores: true
+      )
 
       assert queue.published?
-      assert (queue.build_failed_fast? || queue.exhausted?)
+      assert(queue.build_failed_fast? || queue.exhausted?)
       assert_operator heartbeats.size, :>=, 0
-      assert heartbeats.all? { |hb| Time.at(hb.last) <= Time.now }
+      assert(heartbeats.all? { |hb| Time.at(hb.last) <= Time.now })
     end
 
     def assert_build_not_flakey(queue)

@@ -17,12 +17,13 @@ class TestEndToEnd < RSpecQTest
       "./spec/success_spec.rb",
     ], queue
 
-   assert_equal 3 + 3 + 5, queue.example_count
+    assert_equal 3 + 3 + 5, queue.example_count
 
-   assert_equal({
-     "./spec/fail_1_spec.rb[1:2]" => "3",
-     "./spec/fail_2_spec.rb[1:2]" => "3",
-   }, queue.requeued_jobs)
+    assert_equal(
+      { "./spec/fail_1_spec.rb[1:2]" => "3",
+        "./spec/fail_2_spec.rb[1:2]" => "3" },
+      queue.requeued_jobs
+    )
   end
 
   def test_passing_suite
@@ -87,7 +88,7 @@ class TestEndToEnd < RSpecQTest
       "./spec/medium_spec.rb",
       "./spec/slow_spec.rb",
       "./spec/very_slow_spec.rb",
-    ], queue.timings.sort_by { |k,v| v }.map(&:first)
+    ], queue.timings.sort_by { |_, v| v }.map(&:first)
   end
 
   def test_timings_no_update
@@ -98,11 +99,11 @@ class TestEndToEnd < RSpecQTest
   end
 
   def test_spec_file_splitting
-    queue = exec_build( "spec_file_splitting", "--update-timings")
+    queue = exec_build("spec_file_splitting", "--update-timings")
     assert queue.build_successful?
     refute_empty queue.timings
 
-    queue = exec_build( "spec_file_splitting", "--file-split-threshold 1")
+    queue = exec_build("spec_file_splitting", "--file-split-threshold 1")
 
     assert queue.build_successful?
     refute_empty queue.timings
