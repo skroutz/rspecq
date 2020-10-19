@@ -204,6 +204,7 @@ module RSpecQ
     private
 
     def reset_rspec_state!
+      RSpec.reset
       RSpec.clear_examples
 
       # see https://github.com/rspec/rspec-core/pull/2723
