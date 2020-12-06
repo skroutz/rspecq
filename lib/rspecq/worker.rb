@@ -58,6 +58,11 @@ module RSpecQ
     # given in the command.
     attr_accessor :reproduction
 
+    # Optional arguments to pass along to rspec.
+    #
+    # Defaults to nil
+    attr_accessor :rspec_args
+
     attr_reader :queue
 
     def initialize(build_id:, worker_id:, redis_opts:)
@@ -123,7 +128,8 @@ module RSpecQ
           RSpec.configuration.add_formatter(Formatters::JobTimingRecorder.new(queue, job))
         end
 
-        opts = RSpec::Core::ConfigurationOptions.new(["--format", "progress", job])
+        args = [*rspec_args, "--format", "progress", job]
+        opts = RSpec::Core::ConfigurationOptions.new(args)
         _result = RSpec::Core::Runner.new(opts).run($stderr, $stdout)
 
         queue.acknowledge_job(job)
