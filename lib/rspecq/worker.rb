@@ -75,7 +75,7 @@ module RSpecQ
 
       try_publish_queue!(queue)
       queue.wait_until_published
-
+      idx = 0
       loop do
         # we have to bootstrap this so that it can be used in the first call
         # to `requeue_lost_job` inside the work loop
@@ -114,10 +114,18 @@ module RSpecQ
 
         args = [*rspec_args, "--format", "progress", job]
         opts = RSpec::Core::ConfigurationOptions.new(args)
+
+        junit_formatter = opts.options[:formatters].find { |formatter| formatter[0] == "RspecJunitFormatter" }
+        if junit_formatter
+          opts.options[:formatters].delete(junit_formatter)
+          output_file = junit_formatter[1].split(".")
+          opts.options[:formatters] << ["RspecJunitFormatter", "#{output_file.first}-job-#{idx}.#{output_file.last}"]
+        end
         _result = RSpec::Core::Runner.new(opts).run($stderr, $stdout)
 
         queue.acknowledge_job(job)
       end
+      idx += 1
     end
 
     # Update the worker heartbeat if necessary
