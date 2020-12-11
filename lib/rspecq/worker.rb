@@ -143,8 +143,8 @@ module RSpecQ
         _result = RSpec::Core::Runner.new(opts).run($stderr, $stdout)
 
         queue.acknowledge_job(job)
+        idx += 1
       end
-      idx += 1
     end
 
     # Update the worker heartbeat if necessary
