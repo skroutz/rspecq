@@ -57,6 +57,10 @@ module RSpecQ
     # Reproduction flag. If true, worker will publish files in the exact order
     # given in the command.
     attr_accessor :reproduction
+    # Include a suite counter in any output filenames so that each suite run
+    #
+    # Defaults to false
+    attr_accessor :include_suite_in_filename
 
     # Optional arguments to pass along to rspec.
     #
@@ -78,6 +82,7 @@ module RSpecQ
       @queue_wait_timeout = 30
       @seed = srand && srand % 0xFFFF
       @reproduction = false
+      @include_suite_in_filename = false
 
       RSpec::Core::Formatters.register(Formatters::JobTimingRecorder, :dump_summary)
       RSpec::Core::Formatters.register(Formatters::ExampleCountRecorder, :dump_summary)
@@ -131,12 +136,10 @@ module RSpecQ
         args = [*rspec_args, "--format", "progress", job]
         opts = RSpec::Core::ConfigurationOptions.new(args)
 
-        junit_formatter = opts.options[:formatters].find { |formatter| formatter[0] == "RspecJunitFormatter" }
-        if junit_formatter
-          opts.options[:formatters].delete(junit_formatter)
-          output_file = junit_formatter[1].split(".")
-          opts.options[:formatters] << ["RspecJunitFormatter", "#{output_file.first}-job-#{idx}.#{output_file.last}"]
+        if include_suite_in_filename?
+          add_suite_index_to_output_filename(opts, idx)
         end
+
         _result = RSpec::Core::Runner.new(opts).run($stderr, $stdout)
 
         queue.acknowledge_job(job)
@@ -290,6 +293,20 @@ module RSpecQ
         object: inspect,
         pid: Process.pid
       }.merge(additional))
+    end
+
+    def include_suite_in_filename?
+      include_suite_in_filename
+    end
+
+    def add_suite_index_to_output_filename(rspec_options, suite_index)
+      formatters = rspec_options.options[:formatters].select { |formatter| formatter.size == 2 }
+      formatters.each do |formatter|
+        rspec_options.options[:formatters].delete(formatter)
+        file_extension = File.extname(formatter[1])
+        modified_filename = formatter[1].gsub(/#{file_extension}$/, "-#{suite_index}#{file_extension}")
+        rspec_options.options[:formatters] << [formatter[0], modified_filename]
+      end
     end
   end
 end

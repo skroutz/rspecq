@@ -131,6 +131,11 @@ module RSpecQ
           opts[:reproduction] = v
         end
 
+        o.on("--include-suite-in-filename", "Add suite count to output file names so " \
+          "so that all suites are presented in output files.") do |v|
+          opts[:include_suite_in_filename] = v
+        end
+
         o.on_tail("-h", "--help", "Show this message.") do
           puts o
           exit
@@ -157,6 +162,7 @@ module RSpecQ
       opts[:redis_url] ||= ENV["RSPECQ_REDIS_URL"]
       opts[:fail_fast] ||= Integer(ENV["RSPECQ_FAIL_FAST"] || DEFAULT_FAIL_FAST)
       opts[:reproduction] ||= env_set?("RSPECQ_REPRODUCTION")
+      opts[:include_suite_in_filename] ||= env_set?("RSPECQ_INCLUDE_SUITE_IN_FILENAME")
     end
 
     def env_set?(var)

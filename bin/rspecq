@@ -25,6 +25,7 @@ else
   worker.max_requeues = config.max_requeues
   worker.queue_wait_timeout = config.queue_wait_timeout
   worker.fail_fast = config.fail_fast
+  worker.include_suite_in_filename = config.include_suite_in_filename
   worker.seed = config.seed if config.seed
   worker.reproduction = config.reproduction
   worker.work
