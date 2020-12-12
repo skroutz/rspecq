@@ -46,10 +46,10 @@ module RSpecQ
     # Defaults to 0
     attr_accessor :fail_fast
 
-    # Include a suite counter in any output filenames so that each suite run
+    # Output Junit formatted XML
     #
     # Defaults to false
-    attr_accessor :include_suite_in_filename
+    attr_accessor :output_junit
 
     # Optional arguments to pass along to rspec.
     #
@@ -68,14 +68,13 @@ module RSpecQ
       @file_split_threshold = 999_999
       @heartbeat_updated_at = nil
       @max_requeues = 3
-      @include_suite_in_filename = false
+      @output_junit = false
 
       RSpec::Core::Formatters.register(Formatters::JobTimingRecorder, :dump_summary)
       RSpec::Core::Formatters.register(Formatters::ExampleCountRecorder, :dump_summary)
       RSpec::Core::Formatters.register(Formatters::FailureRecorder, :example_failed, :message)
       RSpec::Core::Formatters.register(Formatters::WorkerHeartbeatRecorder, :example_finished)
-      RSpec::Core::Formatters.register(Formatters::JUnitFormatter, :example_failed, :example_passed, :start, :stop, :dump_summary)
-
+      RSpec::Core::Formatters.register(Formatters::JUnitFormatter, :example_failed, :start, :stop, :dump_summary)
     end
 
     def work
@@ -112,7 +111,11 @@ module RSpecQ
         RSpec.configuration.detail_color = :magenta
         RSpec.configuration.seed = srand && srand % 0xFFFF
         RSpec.configuration.backtrace_formatter.filter_gem("rspecq")
-        RSpec.configuration.add_formatter(Formatters::JUnitFormatter.new(queue, job, max_requeues, idx))
+
+        if output_junit
+          RSpec.configuration.add_formatter(Formatters::JUnitFormatter.new(queue, job, max_requeues, idx))
+        end
+
         RSpec.configuration.add_formatter(Formatters::FailureRecorder.new(queue, job, max_requeues))
         RSpec.configuration.add_formatter(Formatters::ExampleCountRecorder.new(queue))
         RSpec.configuration.add_formatter(Formatters::WorkerHeartbeatRecorder.new(self))
@@ -123,12 +126,6 @@ module RSpecQ
 
         args = [*rspec_args, "--format", "progress", job]
         opts = RSpec::Core::ConfigurationOptions.new(args)
-
-        if include_suite_in_filename?
-          add_suite_index_to_output_filename(opts, idx)
-        end
-
-        puts RSpec::Core::Formatters::Loader.formatters.inspect
 
         _result = RSpec::Core::Runner.new(opts).run($stderr, $stdout)
 
@@ -274,20 +271,6 @@ module RSpecQ
         object: inspect,
         pid: Process.pid
       }.merge(additional))
-    end
-
-    def include_suite_in_filename?
-      include_suite_in_filename
-    end
-
-    def add_suite_index_to_output_filename(rspec_options, suite_index)
-      formatters = rspec_options.options[:formatters].select { |formatter| formatter.size == 2 }
-      formatters.each do |formatter|
-        rspec_options.options[:formatters].delete(formatter)
-        file_extension = File.extname(formatter[1])
-        modified_filename = formatter[1].gsub(/#{file_extension}$/, "-#{suite_index}#{file_extension}")
-        rspec_options.options[:formatters] << [formatter[0], modified_filename]
-      end
     end
   end
 end
