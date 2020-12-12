@@ -88,6 +88,8 @@ module RSpecQ
       RSpec::Core::Formatters.register(Formatters::ExampleCountRecorder, :dump_summary)
       RSpec::Core::Formatters.register(Formatters::FailureRecorder, :example_failed, :message)
       RSpec::Core::Formatters.register(Formatters::WorkerHeartbeatRecorder, :example_finished)
+      RSpec::Core::Formatters.register(Formatters::JUnitFormatter, :example_failed, :example_passed, :start, :stop, :dump_summary)
+
     end
 
     def work
@@ -126,6 +128,8 @@ module RSpecQ
         RSpec.configuration.seed = seed
         RSpec.configuration.backtrace_formatter.filter_gem("rspecq")
         RSpec.configuration.add_formatter(Formatters::FailureRecorder.new(queue, job, max_requeues, @worker_id))
+        RSpec.configuration.add_formatter(Formatters::JUnitFormatter.new(queue, job, max_requeues, idx))
+        RSpec.configuration.add_formatter(Formatters::FailureRecorder.new(queue, job, max_requeues))
         RSpec.configuration.add_formatter(Formatters::ExampleCountRecorder.new(queue))
         RSpec.configuration.add_formatter(Formatters::WorkerHeartbeatRecorder.new(self))
 
@@ -139,6 +143,8 @@ module RSpecQ
         if include_suite_in_filename?
           add_suite_index_to_output_filename(opts, idx)
         end
+
+        puts RSpec::Core::Formatters::Loader.formatters.inspect
 
         _result = RSpec::Core::Runner.new(opts).run($stderr, $stdout)
 
