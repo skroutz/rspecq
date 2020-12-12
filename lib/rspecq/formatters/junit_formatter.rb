@@ -10,7 +10,7 @@ module RSpecQ
         @job = job
         @max_requeues = max_requeues
         @requeued_examples = []
-        path = "test_results/results-#{job_index}.xml"
+        path = "test_results/results-#{ENV['TEST_ENV_NUMBER']}-#{job_index}.xml"
         RSpec::Support::DirectoryMaker.mkdir_p(File.dirname(path))
         output_file = File.new(path, "w")
         super(output_file)
