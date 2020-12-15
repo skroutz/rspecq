@@ -1,6 +1,12 @@
 require "test_helpers"
 
 class TestEndToEnd < RSpecQTest
+  def after_teardown
+    Dir["./test/sample_suites/flakey_suite/test/test_results/**/*"].each do |file|
+      File.delete(file)
+    end
+  end
+
   def test_suite_with_legit_failures
     queue = exec_build("failing_suite")
 
@@ -134,5 +140,21 @@ class TestEndToEnd < RSpecQTest
     queue = exec_build("tagged_suite", "-- --tag foo")
 
     assert_equal 1, queue.example_count
+  end
+
+  def test_suite_with_junit_formatter
+    queue = exec_build("flakey_suite",
+                       "--junit-formatter test/test_results/test.{{JOB_INDEX}}.xml")
+
+    assert queue.build_successful?
+    assert_processed_jobs [
+      "./spec/foo_spec.rb",
+      "./spec/foo_spec.rb[1:1]",
+    ], queue
+
+    assert_equal({ "./spec/foo_spec.rb[1:1]" => "2" }, queue.requeued_jobs)
+    assert File.exist?("test/sample_suites/flakey_suite/test/test_results/test.0.xml")
+    assert File.exist?("test/sample_suites/flakey_suite/test/test_results/test.1.xml")
+    assert File.exist?("test/sample_suites/flakey_suite/test/test_results/test.2.xml")
   end
 end

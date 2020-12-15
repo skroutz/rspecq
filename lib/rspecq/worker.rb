@@ -46,10 +46,13 @@ module RSpecQ
     # Defaults to 0
     attr_accessor :fail_fast
 
-    # Output Junit formatted XML
+    # Output Junit formatted XML to a specifiedd file
     #
-    # Defaults to false
-    attr_accessor :output_junit
+    # Example: test_results/results-{{TEST_ENV_NUMBER}}-{{JOB_INDEX}}.xml
+    # where TEST_ENV_NUMBER is substituted with the environment variable
+    # from the gem parallel test, and JOB_INDEX is incremented based
+    # on the number of test suites run in the current process.
+    attr_accessor :junit_formatter
 
     # Optional arguments to pass along to rspec.
     #
@@ -68,7 +71,7 @@ module RSpecQ
       @file_split_threshold = 999_999
       @heartbeat_updated_at = nil
       @max_requeues = 3
-      @output_junit = false
+      @junit_formatter = nil
 
       RSpec::Core::Formatters.register(Formatters::JobTimingRecorder, :dump_summary)
       RSpec::Core::Formatters.register(Formatters::ExampleCountRecorder, :dump_summary)
@@ -112,8 +115,9 @@ module RSpecQ
         RSpec.configuration.seed = srand && srand % 0xFFFF
         RSpec.configuration.backtrace_formatter.filter_gem("rspecq")
 
-        if output_junit
-          RSpec.configuration.add_formatter(Formatters::JUnitFormatter.new(queue, job, max_requeues, idx))
+        if junit_formatter
+          RSpec.configuration.add_formatter(Formatters::JUnitFormatter.new(queue, job, max_requeues,
+                                                                           idx, junit_formatter))
         end
 
         RSpec.configuration.add_formatter(Formatters::FailureRecorder.new(queue, job, max_requeues))
