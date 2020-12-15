@@ -142,9 +142,9 @@ class TestEndToEnd < RSpecQTest
     assert_equal 1, queue.example_count
   end
 
-  def test_suite_with_junit_formatter
+  def test_suite_with_junit_output
     queue = exec_build("flakey_suite",
-                       "--junit-formatter test/test_results/test.{{JOB_INDEX}}.xml")
+                       "--junit-output test/test_results/test.{{JOB_INDEX}}.xml")
 
     assert queue.build_successful?
     assert_processed_jobs [
