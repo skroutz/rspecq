@@ -60,9 +60,13 @@ module RSpecQ
 
     # Include a suite counter in any output filenames so that each suite run
     # Output Junit formatted XML
+    # Output Junit formatted XML to a specifiedd file
     #
-    # Defaults to false
-    attr_accessor :output_junit
+    # Example: test_results/results-{{TEST_ENV_NUMBER}}-{{JOB_INDEX}}.xml
+    # where TEST_ENV_NUMBER is substituted with the environment variable
+    # from the gem parallel test, and JOB_INDEX is incremented based
+    # on the number of test suites run in the current process.
+    attr_accessor :junit_formatter
 
     # Optional arguments to pass along to rspec.
     #
@@ -84,7 +88,7 @@ module RSpecQ
       @queue_wait_timeout = 30
       @seed = srand && srand % 0xFFFF
       @reproduction = false
-      @output_junit = false
+      @junit_formatter = nil
 
       RSpec::Core::Formatters.register(Formatters::JobTimingRecorder, :dump_summary)
       RSpec::Core::Formatters.register(Formatters::ExampleCountRecorder, :dump_summary)
@@ -130,8 +134,9 @@ module RSpecQ
         RSpec.configuration.backtrace_formatter.filter_gem("rspecq")
         RSpec.configuration.add_formatter(Formatters::FailureRecorder.new(queue, job, max_requeues, @worker_id))
 
-        if output_junit
-          RSpec.configuration.add_formatter(Formatters::JUnitFormatter.new(queue, job, max_requeues, idx))
+        if junit_formatter
+          RSpec.configuration.add_formatter(Formatters::JUnitFormatter.new(queue, job, max_requeues,
+                                                                           idx, junit_formatter))
         end
 
         RSpec.configuration.add_formatter(Formatters::ExampleCountRecorder.new(queue))
