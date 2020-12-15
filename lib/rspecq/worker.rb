@@ -66,7 +66,7 @@ module RSpecQ
     # where TEST_ENV_NUMBER is substituted with the environment variable
     # from the gem parallel test, and JOB_INDEX is incremented based
     # on the number of test suites run in the current process.
-    attr_accessor :junit_formatter
+    attr_accessor :junit_output
 
     # Optional arguments to pass along to rspec.
     #
@@ -88,7 +88,7 @@ module RSpecQ
       @queue_wait_timeout = 30
       @seed = srand && srand % 0xFFFF
       @reproduction = false
-      @junit_formatter = nil
+      @junit_output = nil
 
       RSpec::Core::Formatters.register(Formatters::JobTimingRecorder, :dump_summary)
       RSpec::Core::Formatters.register(Formatters::ExampleCountRecorder, :dump_summary)
@@ -134,9 +134,9 @@ module RSpecQ
         RSpec.configuration.backtrace_formatter.filter_gem("rspecq")
         RSpec.configuration.add_formatter(Formatters::FailureRecorder.new(queue, job, max_requeues, @worker_id))
 
-        if junit_formatter
+        if junit_output
           RSpec.configuration.add_formatter(Formatters::JUnitFormatter.new(queue, job, max_requeues,
-                                                                           idx, junit_formatter))
+                                                                           idx, junit_output))
         end
 
         RSpec.configuration.add_formatter(Formatters::ExampleCountRecorder.new(queue))

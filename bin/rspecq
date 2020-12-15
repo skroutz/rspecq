@@ -25,7 +25,7 @@ else
   worker.max_requeues = config.max_requeues
   worker.queue_wait_timeout = config.queue_wait_timeout
   worker.fail_fast = config.fail_fast
-  worker.junit_formatter = config.junit_formatter
+  worker.junit_output = config.junit_output
   worker.seed = config.seed if config.seed
   worker.reproduction = config.reproduction
   worker.work

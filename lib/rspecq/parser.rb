@@ -131,9 +131,11 @@ module RSpecQ
           opts[:reproduction] = v
         end
 
-        o.on("--junit-formatter filepath", String, "Output junit formatted xml " \
-          "for CI suites to the defined file path.") do |v|
-          opts[:junit_formatter] = v
+        o.on("--junit-output filepath", String, "Output junit formatted xml "    \
+            "for CI suites to the defined file path. Substitution parameters "  \
+            "{{TEST_ENV_NUMBER}} - parallel gem proc number. "                  \
+            "{{JOB_INDEX}} - increments with each suite that is run.") do |v|
+          opts[:junit_output] = v
         end
 
         o.on_tail("-h", "--help", "Show this message.") do
@@ -162,7 +164,7 @@ module RSpecQ
       opts[:redis_url] ||= ENV["RSPECQ_REDIS_URL"]
       opts[:fail_fast] ||= Integer(ENV["RSPECQ_FAIL_FAST"] || DEFAULT_FAIL_FAST)
       opts[:reproduction] ||= env_set?("RSPECQ_REPRODUCTION")
-      opts[:junit_formatter] ||= ENV["RSPECQ_JUNIT_FORMATTER"]
+      opts[:junit_output] ||= ENV["RSPECQ_JUNIT_OUTPUT"]
     end
 
     def env_set?(var)
