@@ -210,7 +210,7 @@ module RSpecQ
       @redis.get(key_queue_status) == STATUS_READY
     end
 
-    def wait_until_published(timeout = 30)
+    def wait_until_published(timeout = 60)
       (timeout * 10).times do
         return if published?
 
