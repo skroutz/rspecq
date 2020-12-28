@@ -200,8 +200,7 @@ module RSpecQ
     # falling back to scheduling them as whole files. Their errors will be
     # reported in the normal flow when they're eventually picked up by a worker.
     def files_to_example_ids(files)
-      cmd = "DISABLE_SPRING=1 bundle exec rspec --dry-run --format json #{files.join(' ')}"
-      out, err, cmd_result = Open3.capture3(cmd)
+      out, err, cmd_result = Open3.capture3(rspec_dry_run_command(files))
 
       if !cmd_result.success?
         rspec_output = begin
@@ -223,7 +222,13 @@ module RSpecQ
         return files
       end
 
-      JSON.parse(out)["examples"].map { |e| e["id"] }
+      # strip extraneous output before json
+      rspec_json = out[out.index(/{.*version/)..-1]
+      JSON.parse(rspec_json)["examples"].map { |e| e["id"] }
+    end
+
+    def rspec_dry_run_command(files)
+      "DISABLE_SPRING=1 bundle exec rspec --dry-run --format json #{files.join(' ')}"
     end
 
     def relative_path(job)

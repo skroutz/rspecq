@@ -56,6 +56,28 @@ class TestScheduling < RSpecQTest
     ], worker.queue.unprocessed_jobs
   end
 
+  def test_scheduling_with_timings_and_splitting_and_stdout_before_rspec_dry_run
+    worker = new_worker("scheduling")
+    worker.populate_timings = true
+    silent { worker.work }
+
+    assert_queue_well_formed(worker.queue)
+
+    worker = new_worker("scheduling")
+    worker.define_singleton_method(:rspec_dry_run_command) do |files|
+      "echo 'foo' && DISABLE_SPRING=1 bundle exec rspec --dry-run --format json #{files.join(' ')}"
+    end
+    worker.populate_timings = true
+    worker.file_split_threshold = 0.2
+    silent { worker.try_publish_queue!(worker.queue) }
+
+    assert_equal [
+      "./test/sample_suites/scheduling/spec/bar_spec.rb",
+      "./test/sample_suites/scheduling/spec/foo_spec.rb[1:1]",
+      "./test/sample_suites/scheduling/spec/foo_spec.rb[1:2:1]",
+    ], worker.queue.unprocessed_jobs
+  end
+
   def test_untimed_jobs_scheduled_in_the_middle
     worker = new_worker("scheduling_untimed/spec/foo")
     worker.populate_timings = true
