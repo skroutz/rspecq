@@ -46,6 +46,11 @@ module RSpecQ
     # Defaults to 0
     attr_accessor :fail_fast
 
+    # Time to wait for a queue to be published.
+    #
+    # Defaults to 30
+    attr_accessor :queue_wait_timeout
+
     attr_reader :queue
 
     def initialize(build_id:, worker_id:, redis_opts:)
@@ -58,6 +63,7 @@ module RSpecQ
       @file_split_threshold = 999_999
       @heartbeat_updated_at = nil
       @max_requeues = 3
+      @queue_wait_timeout = 30
 
       RSpec::Core::Formatters.register(Formatters::JobTimingRecorder, :dump_summary)
       RSpec::Core::Formatters.register(Formatters::ExampleCountRecorder, :dump_summary)
@@ -69,7 +75,7 @@ module RSpecQ
       puts "Working for build #{@build_id} (worker=#{@worker_id})"
 
       try_publish_queue!(queue)
-      queue.wait_until_published
+      queue.wait_until_published(queue_wait_timeout)
 
       loop do
         # we have to bootstrap this so that it can be used in the first call
