@@ -73,6 +73,7 @@ OPTIONS:
                                      Exits with a non-zero status code if there were any failures.
         --report-timeout N           Fail if build is not finished after N seconds. Only applicable if --report is enabled (default: 3600).
         --max-requeues N             Retry failed examples up to N times before considering them legit failures (default: 3).
+        --queue-wait-timeout N       Time to wait for a queue to be ready before considering it failed (default: 30).
         --fail-fast N                Abort build with a non-zero status code after N failed examples.
     -h, --help                       Show this message.
     -v, --version                    Print the version and exit.

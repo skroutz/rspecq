@@ -5,6 +5,7 @@ require "rspecq"
 DEFAULT_REDIS_HOST = "127.0.0.1".freeze
 DEFAULT_REPORT_TIMEOUT = 3600 # 1 hour
 DEFAULT_MAX_REQUEUES = 3
+DEFAULT_QUEUE_WAIT_TIMEOUT = 30
 DEFAULT_FAIL_FAST = 0
 
 def env_set?(var)
@@ -84,6 +85,12 @@ OptionParser.new do |o|
     opts[:max_requeues] = v
   end
 
+  o.on("--queue-wait-timeout N", Integer, "Time to wait for a queue to be "   \
+       "ready before considering it failed "                                  \
+       "(default: #{DEFAULT_QUEUE_WAIT_TIMEOUT}).") do |v|
+    opts[:queue_wait_timeout] = v
+  end
+
   o.on("--fail-fast N", Integer, "Abort build with a non-zero status code " \
        "after N failed examples.") do |v|
     opts[:fail_fast] = v
@@ -108,6 +115,7 @@ opts[:file_split_threshold] ||= Integer(ENV["RSPECQ_FILE_SPLIT_THRESHOLD"] || 9_
 opts[:report] ||= env_set?("RSPECQ_REPORT")
 opts[:report_timeout] ||= Integer(ENV["RSPECQ_REPORT_TIMEOUT"] || DEFAULT_REPORT_TIMEOUT)
 opts[:max_requeues] ||= Integer(ENV["RSPECQ_MAX_REQUEUES"] || DEFAULT_MAX_REQUEUES)
+opts[:queue_wait_timeout] ||= Integer(ENV["RSPECQ_QUEUE_WAIT_TIMEOUT"] || DEFAULT_QUEUE_WAIT_TIMEOUT)
 opts[:redis_url] ||= ENV["RSPECQ_REDIS_URL"]
 opts[:fail_fast] ||= Integer(ENV["RSPECQ_FAIL_FAST"] || DEFAULT_FAIL_FAST)
 
@@ -128,7 +136,8 @@ if opts[:report]
   reporter = RSpecQ::Reporter.new(
     build_id: opts[:build],
     timeout: opts[:report_timeout],
-    redis_opts: redis_opts
+    redis_opts: redis_opts,
+    queue_wait_timeout: opts[:queue_wait_timeout]
   )
 
   reporter.report
@@ -143,6 +152,7 @@ else
   worker.populate_timings = opts[:timings]
   worker.file_split_threshold = opts[:file_split_threshold]
   worker.max_requeues = opts[:max_requeues]
+  worker.queue_wait_timeout = opts[:queue_wait_timeout]
   worker.fail_fast = opts[:fail_fast]
   worker.work
 end

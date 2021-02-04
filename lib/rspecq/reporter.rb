@@ -9,10 +9,11 @@ module RSpecQ
   #
   # Reporters are readers of the queue.
   class Reporter
-    def initialize(build_id:, timeout:, redis_opts:)
+    def initialize(build_id:, timeout:, redis_opts:, queue_wait_timeout: 30)
       @build_id = build_id
       @timeout = timeout
       @queue = Queue.new(build_id, "reporter", redis_opts)
+      @queue_wait_timeout = queue_wait_timeout
 
       # We want feedback to be immediattely printed to CI users, so
       # we disable buffering.
@@ -20,7 +21,7 @@ module RSpecQ
     end
 
     def report
-      @queue.wait_until_published
+      @queue.wait_until_published(@queue_wait_timeout)
 
       finished = false
 
