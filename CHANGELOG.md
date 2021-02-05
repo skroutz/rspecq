@@ -1,8 +1,16 @@
 # Changelog
 
+## master (unreleased)
+
 Breaking changes are prefixed with a "[BREAKING]" label.
 
-## master (unreleased)
+## 0.5.0 (2021-02-05)
+
+### Added
+
+- New cli parameter `queue_wait_timeout`.
+  It configured the time a queue can wait to be ready. The env equivalent
+  is `RSPECQ_QUEUE_WAIT_TIMEOUT`. [#51](https://github.com/skroutz/rspecq/pull/51)
 
 ## 0.4.0 (2020-10-07)
 
@@ -27,7 +35,7 @@ Breaking changes are prefixed with a "[BREAKING]" label.
 ## 0.2.2 (2020-09-10)
 
 ### Fixed
-- Worker would fail if application code was writing to stderr 
+- Worker would fail if application code was writing to stderr
  [[#35](https://github.com/skroutz/rspecq/pull/35)]
 
 ## 0.2.1 (2020-09-09)
