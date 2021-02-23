@@ -79,6 +79,23 @@ OPTIONS:
     -v, --version                    Print the version and exit.
 ```
 
+#### ENV variables
+Options can be set via ENV variables
+```
+Build ID              RSPECQ_BUILD
+Worker ID             RSPECQ_WORKER
+Redis HOST            RSPECQ_REDIS
+Timings               RSPECQ_UPDATE_TIMINGS
+File split threshold  RSPECQ_FILE_SPLIT_THRESHOLD
+Report                RSPECQ_REPORT
+Report Timeout        RSPECQ_REPORT_TIMEOUT
+Max requests          RSPECQ_MAX_REQUEUES
+Queue wait timeout    RSPECQ_QUEUE_WAIT_TIMEOUT
+Redis URL             RSPECQ_REDIS_URL
+Redis options (JSON)  RSPECQ_REDIS_OPTS
+Fail fast             RSPECQ_FAIL_FAST
+ 
+```
 ### Sentry integration
 
 RSpecQ can optionally emit build events to a
@@ -194,6 +211,19 @@ on every run (if the `--update-timings` option was used). Also, RSpecQ has a
 "slow file threshold" which, currently has to be set manually (but this can be
 improved in the future).
 
+### CircleCI integration
+As CircleCI does not allow to spin up shared Redis instance, Redis server should be configured outside CircleCI environment.
+Redis connection credentials could be set as CircleCI project environment variable `RSPECQ_REDIS_URL`
+
+Secure redis connection is supported via `rediss://` schema, additional TLS options can be specified via `RSPECQ_REDIS_OPTS` env variable in JSON format.
+For example `{ "ssl_params": { "ca_file": "spec/support/lib/ca_heroku.crt", "verify_hostname": false } }`
+
+`circle.yml` could run rspecq as:
+```yml
+  - type: shell
+    command: |
+      bundle exec rspecq --build=${CIRCLE_BUILD_NUM} --worker=${CIRCLE_NODE_INDEX}
+```
 
 ## Development
 

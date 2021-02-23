@@ -124,7 +124,7 @@ raise OptionParser::MissingArgument.new(:build) if opts[:build].nil?
 raise OptionParser::MissingArgument.new(:worker) if !opts[:report] && opts[:worker].nil?
 # rubocop:enable Style/RaiseArgs, Layout/EmptyLineAfterGuardClause
 
-redis_opts = {}
+redis_opts = JSON.parse(ENV.fetch("RSPECQ_REDIS_OPTS", "{}"), symbolize_names: true)
 
 if opts[:redis_url]
   redis_opts[:url] = opts[:redis_url]
