@@ -79,6 +79,28 @@ OPTIONS:
     -v, --version                    Print the version and exit.
 ```
 
+You can set most options using ENV variables:
+
+```shell
+$ RSPECQ_BUILD=123 RSPECQ_WORKDER=foo1 rspecq spec/
+```
+
+### Supported ENV variables
+
+| Name | Desc |
+| --- | --- |
+| `RSPECQ_BUILD` | Build ID |
+| `RSPECQ_WORKER` | Worker ID |
+| `RSPECQ_REDIS` | Redis HOST |
+| `RSPECQ_UPDATE_TIMINGS` | Timings |
+| `RSPECQ_FILE_SPLIT_THRESHOLD` | File split threshold |
+| `RSPECQ_REPORT` | Report |
+| `RSPECQ_REPORT_TIMEOUT` | Report Timeout |
+| `RSPECQ_MAX_REQUEUES` | Max requests |
+| `RSPECQ_QUEUE_WAIT_TIMEOUT` | Queue wait timeout |
+| `RSPECQ_REDIS_URL` | Redis URL |
+| `RSPECQ_FAIL_FAST` | Fail fast |
+
 ### Sentry integration
 
 RSpecQ can optionally emit build events to a
