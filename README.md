@@ -112,7 +112,6 @@ This is convenient for monitoring important warnings/errors that may impact
 build times, such as the fact that no previous timings were found and
 therefore job scheduling was effectively random for a particular build.
 
-
 ## How it works
 
 The core design is almost identical to ci-queue so please refer to its
@@ -139,7 +138,7 @@ For example, a single file may need 10 minutes to run while all other
 files finish after 8 minutes. This would cause all but one workers to be
 sitting idle for 2 minutes.
 
-To overcome this issue, RSpecQ can splits files which their execution time is
+To overcome this issue, RSpecQ can split files which their execution time is
 above a certain threshold (set with the `--file-split-threshold` option)
 and instead schedule them as individual examples.
 
