@@ -28,7 +28,7 @@ class TestReporter < RSpecQTest
     output = exec_reporter(build_id: build_id)
 
     assert_match "Flaky jobs detected", output
-    assert_match "./spec/foo_spec.rb[1:1]", output
+    assert_match "./spec/foo_spec.rb:2", output
     refute_match "Failed examples", output
   end
 end

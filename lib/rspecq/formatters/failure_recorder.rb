@@ -31,6 +31,11 @@ module RSpecQ
         example = notification.example
 
         if @queue.requeue_job(example.id, @max_requeues)
+
+          # Save the rerun location for later. It will be used if this is
+          # a flaky test for more user-friendly reporting.
+          @queue.set_job_location(example.id, example.location_rerun_argument)
+
           # HACK: try to avoid picking the job we just requeued; we want it
           # to be picked up by a different worker
           sleep 0.5
