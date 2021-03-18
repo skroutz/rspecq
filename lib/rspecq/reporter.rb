@@ -56,7 +56,7 @@ module RSpecQ
 
       @queue.record_build_time(tests_duration)
 
-      flaky_jobs = @queue.flaky_jobs
+      flaky_jobs = @queue.flaky_jobs.map { |job| @queue.rerun_command(job) }
 
       puts summary(@queue.example_failures, @queue.non_example_errors,
         flaky_jobs, humanize_duration(tests_duration))

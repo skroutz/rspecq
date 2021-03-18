@@ -135,6 +135,14 @@ module RSpecQ
       )
     end
 
+    def save_rerun_command(job, location)
+      @redis.hset(key("job_metadata"), job, location)
+    end
+
+    def rerun_command(job)
+      @redis.hget(key("job_metadata"), job)
+    end
+
     def record_example_failure(example_id, message)
       @redis.hset(key_failures, example_id, message)
     end
