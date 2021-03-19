@@ -20,6 +20,7 @@ class TestReporter < RSpecQTest
 
     assert_match "Failed examples", output
     assert_match "./spec/fail_1_spec.rb:3", output
+    assert_match "bin/rspec --seed", output
   end
 
   def test_flakey_suite
