@@ -237,6 +237,13 @@ To enable verbose output in the tests:
 $ RSPECQ_DEBUG=1 bundle exec rake
 ```
 
+## Redis
+
+RSpecQ by design doesn't expire its keys from Redis. It is left to the user
+to configure the Redis server to do so; see
+[Using Redis as an LRU cache](https://redis.io/topics/lru-cache) for more info.
+
+You can do this from a configuration file or with `redis-cli`.
 
 ## License
 
