@@ -44,7 +44,7 @@ module RSpecQ
         msg = presenter.fully_formatted(nil, @colorizer)
         msg << "\n"
         msg << @colorizer.wrap(
-          "bin/rspec #{example.location_rerun_argument}",
+          "bin/rspec --seed #{RSpec.configuration.seed} #{example.location_rerun_argument}",
           RSpec.configuration.failure_color
         )
 

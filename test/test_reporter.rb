@@ -16,11 +16,11 @@ class TestReporter < RSpecQTest
 
   def test_failing_suite
     build_id = rand_id
-    exec_build("failing_suite", "", build_id: build_id)
+    exec_build("failing_suite", "--seed 1234", build_id: build_id)
     output = exec_reporter(build_id: build_id)
 
     assert_match "Failed examples", output
-    assert_match "bin/rspec ./spec/fail_1_spec.rb:3", output
+    assert_match "bin/rspec --seed 1234 ./spec/fail_1_spec.rb:3", output
     refute_match "Flaky", output
   end
 
