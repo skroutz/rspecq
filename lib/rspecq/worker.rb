@@ -51,6 +51,9 @@ module RSpecQ
     # Defaults to 30
     attr_accessor :queue_wait_timeout
 
+    # The RSpec seed
+    attr_accessor :seed
+
     attr_reader :queue
 
     def initialize(build_id:, worker_id:, redis_opts:)
@@ -64,6 +67,7 @@ module RSpecQ
       @heartbeat_updated_at = nil
       @max_requeues = 3
       @queue_wait_timeout = 30
+      @seed = srand && srand % 0xFFFF
 
       RSpec::Core::Formatters.register(Formatters::JobTimingRecorder, :dump_summary)
       RSpec::Core::Formatters.register(Formatters::ExampleCountRecorder, :dump_summary)
@@ -103,7 +107,7 @@ module RSpecQ
 
         # reconfigure rspec
         RSpec.configuration.detail_color = :magenta
-        RSpec.configuration.seed = srand && srand % 0xFFFF
+        RSpec.configuration.seed = seed
         RSpec.configuration.backtrace_formatter.filter_gem("rspecq")
         RSpec.configuration.add_formatter(Formatters::FailureRecorder.new(queue, job, max_requeues))
         RSpec.configuration.add_formatter(Formatters::ExampleCountRecorder.new(queue))

@@ -1,8 +1,11 @@
 # Changelog
 
+Breaking changes are prefixed with a "[BREAKING]" label.
+
 ## master (unreleased)
 
-Breaking changes are prefixed with a "[BREAKING]" label.
+- New cli parameter `seed`.
+  The seed is passed to the RSpec command.
 
 ## 0.5.0 (2021-02-05)
 

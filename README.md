@@ -91,6 +91,7 @@ $ RSPECQ_BUILD=123 RSPECQ_WORKDER=foo1 rspecq spec/
 | --- | --- |
 | `RSPECQ_BUILD` | Build ID |
 | `RSPECQ_WORKER` | Worker ID |
+| `RSPECQ_SEED` | RSpec seed |
 | `RSPECQ_REDIS` | Redis HOST |
 | `RSPECQ_UPDATE_TIMINGS` | Timings |
 | `RSPECQ_FILE_SPLIT_THRESHOLD` | File split threshold |

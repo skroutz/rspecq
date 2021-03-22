@@ -38,6 +38,11 @@ OptionParser.new do |o|
     opts[:worker] = v
   end
 
+  o.on("--seed SEED", "The RSpec seed. Passing the seed can be helpful in " \
+    "many ways i.e reproduction and testing.") do |v|
+    opts[:seed] = v
+  end
+
   o.on("-r", "--redis HOST", "Redis host to connect to " \
        "(default: #{DEFAULT_REDIS_HOST}).") do |v|
     puts "DEPRECATION: --redis is deprecated. Use --redis-host or --redis-url instead"
@@ -109,6 +114,7 @@ end.parse!
 
 opts[:build] ||= ENV["RSPECQ_BUILD"]
 opts[:worker] ||= ENV["RSPECQ_WORKER"]
+opts[:seed] ||= ENV["RSPECQ_SEED"]
 opts[:redis_host] ||= ENV["RSPECQ_REDIS"] || DEFAULT_REDIS_HOST
 opts[:timings] ||= env_set?("RSPECQ_UPDATE_TIMINGS")
 opts[:file_split_threshold] ||= Integer(ENV["RSPECQ_FILE_SPLIT_THRESHOLD"] || 9_999_999)
@@ -154,5 +160,6 @@ else
   worker.max_requeues = opts[:max_requeues]
   worker.queue_wait_timeout = opts[:queue_wait_timeout]
   worker.fail_fast = opts[:fail_fast]
+  worker.seed = Integer(opts[:seed]) if opts[:seed]
   worker.work
 end
