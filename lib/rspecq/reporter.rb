@@ -135,11 +135,8 @@ module RSpecQ
         extra = {
           build: @build_id,
           build_timeout: @timeout,
-          queue: @queue.inspect,
-          object: inspect,
-          pid: Process.pid,
+          build_duration: build_duration,
           rerun_command: job,
-          build_duration: build_duration
         }
 
         tags = {
