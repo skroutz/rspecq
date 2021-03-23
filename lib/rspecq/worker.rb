@@ -118,7 +118,10 @@ module RSpecQ
         end
 
         opts = RSpec::Core::ConfigurationOptions.new(["--format", "progress", job])
-        _result = RSpec::Core::Runner.new(opts).run($stderr, $stdout)
+
+        ActiveSupport::Notifications.instrument('custom_sleep_event') do
+          RSpec::Core::Runner.new(opts).run($stderr, $stdout)
+        end
 
         queue.acknowledge_job(job)
       end
