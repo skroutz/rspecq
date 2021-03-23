@@ -138,7 +138,7 @@ module RSpecQ
           queue: @queue.inspect,
           object: inspect,
           pid: Process.pid,
-          job_path: job,
+          rerun_command: job,
           build_duration: build_duration
         }
 
