@@ -4,6 +4,8 @@ Breaking changes are prefixed with a "[BREAKING]" label.
 
 ## master (unreleased)
 
+## 0.6.0 (2021-03-23)
+
 - New cli parameter `seed`.
   The seed is passed to the RSpec command.
 
