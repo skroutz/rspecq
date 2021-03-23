@@ -119,7 +119,13 @@ module RSpecQ
 
         opts = RSpec::Core::ConfigurationOptions.new(["--format", "progress", job])
 
-        ActiveSupport::Notifications.instrument('custom_sleep_event') do
+        data = {
+          job: job,
+          opts: opts,
+          seed: seed,
+          worker_id: @worker_id
+        }
+        ActiveSupport::Notifications.instrument('run.rspec.rspecq', data) do
           RSpec::Core::Runner.new(opts).run($stderr, $stdout)
         end
 
