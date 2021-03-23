@@ -135,12 +135,14 @@ module RSpecQ
       )
     end
 
-    def save_rerun_command(job, cmd)
-      @redis.hset(key("job_metadata"), job, cmd)
+    # General purpose method.
+    # Used to save metadata regarding a job, i.e its backtrace.
+    def save_job_metadata(job, key, value)
+      @redis.hset(key("job_metadata"), "#{job}_#{key}", value)
     end
 
-    def rerun_command(job)
-      @redis.hget(key("job_metadata"), job)
+    def job_metadata(job, key)
+      @redis.hget(key("job_metadata"), "#{job}_#{key}")
     end
 
     def record_example_failure(example_id, message)

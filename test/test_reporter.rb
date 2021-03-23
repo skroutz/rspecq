@@ -20,7 +20,7 @@ class TestReporter < RSpecQTest
     output = exec_reporter(build_id: build_id)
 
     assert_match "Failed examples", output
-    assert_match "bin/rspec --seed 1234 ./spec/fail_1_spec.rb:3", output
+    assert_match "bin/rspec ./spec/fail_1_spec.rb:3", output
     refute_match "Flaky", output
   end
 
@@ -30,7 +30,7 @@ class TestReporter < RSpecQTest
     output = exec_reporter(build_id: build_id)
 
     assert_match "Flaky jobs detected", output
-    assert_match "bin/rspec --seed 1234 ./spec/foo_spec.rb:2", output
+    assert_match "./spec/foo_spec.rb:2", output
     refute_match "Failed examples", output
   end
 end

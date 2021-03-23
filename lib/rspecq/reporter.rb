@@ -56,7 +56,7 @@ module RSpecQ
 
       @queue.record_build_time(tests_duration)
 
-      flaky_jobs = @queue.flaky_jobs.map { |job| @queue.rerun_command(job) }
+      flaky_jobs = @queue.flaky_jobs
 
       puts summary(@queue.example_failures, @queue.non_example_errors,
         flaky_jobs, humanize_duration(tests_duration))
@@ -107,9 +107,11 @@ module RSpecQ
       if !flaky_jobs.empty?
         summary << "\n\n"
         summary << "Flaky jobs detected (count=#{flaky_jobs.count}):\n"
+
         flaky_jobs.each do |j|
+          location = @queue.job_metadata(j, "location")
           summary << RSpec::Core::Formatters::ConsoleCodes.wrap(
-            "#{j}\n",
+            "#{location}\n",
             RSpec.configuration.pending_color
           )
         end
@@ -131,12 +133,18 @@ module RSpecQ
 
       jobs.each do |job|
         filename = job.sub(/\[.+\]/, "")[%r{spec/.+}].split(":")[0]
+        seed = @queue.job_metadata(job, "seed")
+        failure_reason = @queue.job_metadata(job, "failure_reason")
+        backtrace = @queue.job_metadata(job, "backtrace")
+        worker_id = @queue.job_metadata(job, "worker_id")
 
         extra = {
           build: @build_id,
           build_timeout: @timeout,
           build_duration: build_duration,
-          rerun_command: job,
+          seed: seed,
+          failure_reason: failure_reason,
+          worker_id: worker_id
         }
 
         tags = {
@@ -148,7 +156,8 @@ module RSpecQ
           "Flaky test in #{filename}",
           level: "warning",
           extra: extra,
-          tags: tags
+          tags: tags,
+          backtrace: backtrace
         )
       end
     end
