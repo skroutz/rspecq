@@ -29,6 +29,10 @@ module RSpecQ
       end
 
       def example_failed(notification)
+        ActiveSupport::Notifications.instrument('failure.rspec.rspecq', {
+          notification: notification
+        })
+
         example = notification.example
 
         presenter = RSpec::Core::Formatters::ExceptionPresenter.new(
