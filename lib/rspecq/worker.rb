@@ -118,7 +118,16 @@ module RSpecQ
         end
 
         opts = RSpec::Core::ConfigurationOptions.new(["--format", "progress", job])
-        _result = RSpec::Core::Runner.new(opts).run($stderr, $stdout)
+
+        data = {
+          job: job,
+          opts: opts,
+          seed: seed,
+          worker_id: @worker_id
+        }
+        ActiveSupport::Notifications.instrument('run.rspec.rspecq', data) do
+          RSpec::Core::Runner.new(opts).run($stderr, $stdout)
+        end
 
         queue.acknowledge_job(job)
       end

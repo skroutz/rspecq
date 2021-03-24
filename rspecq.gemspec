@@ -20,6 +20,7 @@ Gem::Specification.new do |s|
 
   s.add_dependency "redis"
   s.add_dependency "sentry-raven"
+  s.add_dependency "activesupport", "~> 6.0"
 
   s.add_development_dependency "minitest"
   s.add_development_dependency "pry-byebug"
