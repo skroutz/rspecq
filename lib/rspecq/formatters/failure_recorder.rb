@@ -30,14 +30,7 @@ module RSpecQ
       def example_failed(notification)
         example = notification.example
 
-        rerun_cmd = "bin/rspec --seed #{RSpec.configuration.seed} #{example.location_rerun_argument}"
-
         if @queue.requeue_job(example.id, @max_requeues)
-
-          # Save the rerun command for later. It will be used if this is
-          # a flaky test for more user-friendly reporting.
-          @queue.save_rerun_command(example.id, rerun_cmd)
-
           # HACK: try to avoid picking the job we just requeued; we want it
           # to be picked up by a different worker
           sleep 0.5
@@ -51,7 +44,7 @@ module RSpecQ
         msg = presenter.fully_formatted(nil, @colorizer)
         msg << "\n"
         msg << @colorizer.wrap(
-          rerun_cmd,
+          "bin/rspec --seed #{RSpec.configuration.seed} #{example.location_rerun_argument}",
           RSpec.configuration.failure_color
         )
 
