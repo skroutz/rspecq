@@ -85,6 +85,7 @@ module RSpecQ
 
       try_publish_queue!(queue)
       queue.wait_until_published(queue_wait_timeout)
+      queue.save_worker_seed(@worker_id, seed)
 
       loop do
         # we have to bootstrap this so that it can be used in the first call
@@ -114,7 +115,7 @@ module RSpecQ
         RSpec.configuration.detail_color = :magenta
         RSpec.configuration.seed = seed
         RSpec.configuration.backtrace_formatter.filter_gem("rspecq")
-        RSpec.configuration.add_formatter(Formatters::FailureRecorder.new(queue, job, max_requeues))
+        RSpec.configuration.add_formatter(Formatters::FailureRecorder.new(queue, job, max_requeues, @worker_id))
         RSpec.configuration.add_formatter(Formatters::ExampleCountRecorder.new(queue))
         RSpec.configuration.add_formatter(Formatters::WorkerHeartbeatRecorder.new(self))
 

@@ -107,7 +107,14 @@ module RSpecQ
       if !flaky_jobs.empty?
         summary << "\n\n"
         summary << "Flaky jobs detected (count=#{flaky_jobs.count}):\n"
-        flaky_jobs.each { |j| summary << "  #{j}\n" }
+        flaky_jobs.each do |j|
+          summary << RSpec::Core::Formatters::ConsoleCodes.wrap(
+            "#{@queue.job_location(j)} @ #{@queue.failed_job_worker(j)}\n",
+            RSpec.configuration.pending_color
+          )
+
+          summary << "#{@queue.job_rerun_command(j)}\n\n\n"
+        end
       end
 
       summary
@@ -131,7 +138,9 @@ module RSpecQ
           build: @build_id,
           build_timeout: @timeout,
           build_duration: build_duration,
-          rerun_command: job,
+          location: @queue.job_location(job),
+          rerun_command: @queue.job_rerun_command(job),
+          worker: @queue.failed_job_worker(job)
         }
 
         tags = {

@@ -27,8 +27,8 @@ module TestHelpers
   #   Alternatively you can pass the build_id in case you need to share it
   #   with the reporter.
   # @return [RSpecQ::Queue]
-  def exec_build(path, args = "", build_id: nil)
-    worker_id = rand_id
+  def exec_build(path, args = "", build_id: nil, worker_id: nil)
+    worker_id ||= rand_id
     build_id ||= rand_id
 
     Dir.chdir(suite_path(path)) do
