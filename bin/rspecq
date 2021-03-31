@@ -154,7 +154,7 @@ else
     redis_opts: redis_opts
   )
 
-  worker.files_or_dirs_to_run = ARGV[0] if ARGV[0]
+  worker.files_or_dirs_to_run = ARGV if ARGV.any?
   worker.populate_timings = opts[:timings]
   worker.file_split_threshold = opts[:file_split_threshold]
   worker.max_requeues = opts[:max_requeues]
