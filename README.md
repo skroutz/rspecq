@@ -76,6 +76,7 @@ OPTIONS:
         --max-requeues N             Retry failed examples up to N times before considering them legit failures (default: 3).
         --queue-wait-timeout N       Time to wait for a queue to be ready before considering it failed (default: 30).
         --fail-fast N                Abort build with a non-zero status code after N failed examples.
+        --reproduction               Enable reproduction mode: Publish files and examples in the exact order given in the command. Incompatible with --timings.
     -h, --help                       Show this message.
     -v, --version                    Print the version and exit.
 ```

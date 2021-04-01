@@ -54,6 +54,10 @@ module RSpecQ
     # The RSpec seed
     attr_accessor :seed
 
+    # Reproduction flag. If true, worker will publish files in the exact order
+    # given in the command.
+    attr_accessor :reproduction
+
     attr_reader :queue
 
     def initialize(build_id:, worker_id:, redis_opts:)
@@ -68,6 +72,7 @@ module RSpecQ
       @max_requeues = 3
       @queue_wait_timeout = 30
       @seed = srand && srand % 0xFFFF
+      @reproduction = false
 
       RSpec::Core::Formatters.register(Formatters::JobTimingRecorder, :dump_summary)
       RSpec::Core::Formatters.register(Formatters::ExampleCountRecorder, :dump_summary)
@@ -134,6 +139,15 @@ module RSpecQ
 
     def try_publish_queue!(queue)
       return if !queue.become_master
+
+      if reproduction
+        q_size = queue.publish(files_or_dirs_to_run, fail_fast)
+        log_event(
+          "Reproduction mode. Published queue as given (size=#{q_size})",
+          "info"
+        )
+        return
+      end
 
       RSpec.configuration.files_or_directories_to_run = files_or_dirs_to_run
       files_to_run = RSpec.configuration.files_to_run.map { |j| relative_path(j) }
