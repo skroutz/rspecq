@@ -64,6 +64,7 @@ USAGE:
 OPTIONS:
     -b, --build ID                   A unique identifier for the build. Should be common among workers participating in the same build.
     -w, --worker ID                  An identifier for the worker. Workers participating in the same build should have distinct IDs.
+        --seed SEED                  The RSpec seed. Passing the seed can be helpful in many ways i.e reproduction and testing.
     -r, --redis HOST                 --redis is deprecated. Use --redis-host or --redis-url instead. Redis host to connect to (default: 127.0.0.1).
         --redis-host HOST            Redis host to connect to (default: 127.0.0.1).
         --redis-url URL              Redis URL to connect to (e.g.: redis://127.0.0.1:6379/0).
