@@ -4,6 +4,13 @@ Breaking changes are prefixed with a "[BREAKING]" label.
 
 ## master (unreleased)
 
+## 0.7.0 (2021-04-1)
+
+- New cli parameter `reproduction`.
+  When passed, primary worker publishes the queue in the same order as passed
+  in the command.
+- Reporter now includes a reproduction command for flaky tests.
+
 ## 0.6.0 (2021-03-23)
 
 - New cli parameter `seed`.
