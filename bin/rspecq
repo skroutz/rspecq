@@ -137,6 +137,7 @@ raise OptionParser::MissingArgument.new(:build) if opts[:build].nil?
 raise OptionParser::MissingArgument.new(:worker) if !opts[:report] && opts[:worker].nil?
 # rubocop:enable Style/RaiseArgs, Layout/EmptyLineAfterGuardClause
 
+# Setup redis
 redis_opts = {}
 
 if opts[:redis_url]
@@ -145,11 +146,19 @@ else
   redis_opts[:host] = opts[:redis_host]
 end
 
+redis_opts[:id] =
+  if opts[:report]
+    "reporter"
+  else
+    opts[:worker]
+  end
+
+RSpecQ.redis ||= Redis.new(redis_opts)
+
 if opts[:report]
   reporter = RSpecQ::Reporter.new(
     build_id: opts[:build],
     timeout: opts[:report_timeout],
-    redis_opts: redis_opts,
     queue_wait_timeout: opts[:queue_wait_timeout]
   )
 
@@ -157,8 +166,7 @@ if opts[:report]
 else
   worker = RSpecQ::Worker.new(
     build_id: opts[:build],
-    worker_id: opts[:worker],
-    redis_opts: redis_opts
+    worker_id: opts[:worker]
   )
 
   worker.files_or_dirs_to_run = ARGV if ARGV.any?

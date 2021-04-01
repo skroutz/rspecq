@@ -60,10 +60,10 @@ module RSpecQ
 
     attr_reader :queue
 
-    def initialize(build_id:, worker_id:, redis_opts:)
+    def initialize(build_id:, worker_id:)
       @build_id = build_id
       @worker_id = worker_id
-      @queue = Queue.new(build_id, worker_id, redis_opts)
+      @queue = Queue.new(build_id, worker_id)
       @fail_fast = 0
       @files_or_dirs_to_run = "spec"
       @populate_timings = false
