@@ -103,6 +103,7 @@ $ RSPECQ_BUILD=123 RSPECQ_WORKDER=foo1 rspecq spec/
 | `RSPECQ_QUEUE_WAIT_TIMEOUT` | Queue wait timeout |
 | `RSPECQ_REDIS_URL` | Redis URL |
 | `RSPECQ_FAIL_FAST` | Fail fast |
+| `RSPECQ_REPORTER_RERUN_COMMAND_SKIP` | Do not report flaky test's rerun command |
 
 ### Sentry integration
 

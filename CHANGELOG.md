@@ -4,7 +4,10 @@ Breaking changes are prefixed with a "[BREAKING]" label.
 
 ## master (unreleased)
 
-## 0.7.0 (2021-04-1)
+- New env variable RSPECQ_REPORTER_RERUN_COMMAND_SKIP. When set, the reporter
+  does not include the flaky test's rerun command.
+
+## 0.7.0 (2021-04-01)
 
 - New cli parameter `reproduction`.
   When passed, primary worker publishes the queue in the same order as passed

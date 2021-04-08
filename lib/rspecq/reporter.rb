@@ -113,6 +113,8 @@ module RSpecQ
             RSpec.configuration.pending_color
           )
 
+          next if ENV["RSPECQ_REPORTER_RERUN_COMMAND_SKIP"]
+
           summary << "#{@queue.job_rerun_command(j)}\n\n\n"
         end
       end
