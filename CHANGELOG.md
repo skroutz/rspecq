@@ -4,6 +4,8 @@ Breaking changes are prefixed with a "[BREAKING]" label.
 
 ## master (unreleased)
 
+## 0.7.1 (2021-04-08)
+
 - New env variable RSPECQ_REPORTER_RERUN_COMMAND_SKIP. When set, the reporter
   does not include the flaky test's rerun command.
 
