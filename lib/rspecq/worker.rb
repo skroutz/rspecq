@@ -80,7 +80,7 @@ module RSpecQ
       @worker_id = worker_id
       @queue = Queue.new(build_id, worker_id, redis_opts)
       @fail_fast = 0
-      @files_or_dirs_to_run = "spec"
+      @files_or_dirs_to_run = ["spec"]
       @populate_timings = false
       @file_split_threshold = 999_999
       @heartbeat_updated_at = nil

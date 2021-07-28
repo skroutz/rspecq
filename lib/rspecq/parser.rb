@@ -138,6 +138,14 @@ module RSpecQ
           opts[:junit_output] = v
         end
 
+        o.on("--include-pattern PATTERN", "Run tests matching the regex") do |v|
+          opts[:include_pattern] = /#{v}/
+        end
+
+        o.on("--exclude-pattern PATTERN", "Regex of tests to exclude from run.") do |v|
+          opts[:exclude_pattern] = /#{v}/
+        end
+
         o.on_tail("-h", "--help", "Show this message.") do
           puts o
           exit
@@ -165,6 +173,8 @@ module RSpecQ
       opts[:fail_fast] ||= Integer(ENV["RSPECQ_FAIL_FAST"] || DEFAULT_FAIL_FAST)
       opts[:reproduction] ||= env_set?("RSPECQ_REPRODUCTION")
       opts[:junit_output] ||= ENV["RSPECQ_JUNIT_OUTPUT"]
+      opts[:include_pattern] ||= ENV["INCLUDE_PATTERN"]
+      opts[:exclude_pattern] ||= ENV["EXCLUDE_PATTERN"]
     end
 
     def env_set?(var)

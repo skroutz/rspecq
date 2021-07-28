@@ -19,6 +19,10 @@ module RSpecQ
         self.rspec_args = args[0...-l]
       end
 
+      if self.include_pattern || self.exclude_pattern
+        self.files_or_dirs_to_run = filter_tests(self.files_or_dirs_to_run, self)
+      end
+
       if redis_url
         self.redis_opts = { url: redis_url }
       else
@@ -28,6 +32,24 @@ module RSpecQ
 
     def report?
       !!report
+    end
+
+    def filter_tests(tests, options = {})
+      suffix_pattern = /_spec\.rb$/
+      include_pattern = options[:include_pattern] || //
+      exclude_pattern = options[:exclude_pattern]
+      pattern = "**{,/*/**}/*"
+
+      (tests || []).flat_map do |file_or_folder|
+        if File.directory?(file_or_folder)
+          files = Dir[File.join(file_or_folder, pattern)].uniq.sort
+          files = files.grep(suffix_pattern).grep(include_pattern)
+          files -= files.grep(exclude_pattern) if exclude_pattern
+          files
+        else
+          file_or_folder
+        end
+      end.uniq
     end
   end
 end
