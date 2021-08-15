@@ -84,7 +84,7 @@ OPTIONS:
 You can set most options using ENV variables:
 
 ```shell
-$ RSPECQ_BUILD=123 RSPECQ_WORKDER=foo1 rspecq spec/
+$ RSPECQ_BUILD=123 RSPECQ_WORKER=foo1 rspecq spec/
 ```
 
 ### Supported ENV variables
