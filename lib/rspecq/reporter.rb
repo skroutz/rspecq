@@ -1,7 +1,7 @@
 module RSpecQ
   # A Reporter, given a build ID, is responsible for consolidating the results
   # from different workers and printing a complete build summary to the user,
-  # along with any failures that might have occured.
+  # along with any failures that might have occurred.
   #
   # The failures are printed in real-time as they occur, while the final
   # summary is printed after the queue is empty and no tests are being
@@ -15,7 +15,7 @@ module RSpecQ
       @queue = Queue.new(build_id, "reporter", redis_opts)
       @queue_wait_timeout = queue_wait_timeout
 
-      # We want feedback to be immediattely printed to CI users, so
+      # We want feedback to be immediately printed to CI users, so
       # we disable buffering.
       $stdout.sync = true
     end

@@ -7,7 +7,8 @@ if config.report?
   reporter = RSpecQ::Reporter.new(
     build_id: config.build,
     timeout: config.report_timeout,
-    redis_opts: config.redis_opts
+    redis_opts: config.redis_opts,
+    queue_wait_timeout: config.queue_wait_timeout
   )
 
   reporter.report
