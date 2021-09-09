@@ -134,7 +134,7 @@ module RSpecQ
       return if jobs.empty?
 
       jobs.each do |job|
-        filename = job.sub(/\[.+\]/, "")[%r{spec/.+}].split(":")[0]
+        filename = job.gsub(/\[.+\]|\.\//, "").split(":")[0]
 
         extra = {
           build: @build_id,
