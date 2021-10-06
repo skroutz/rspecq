@@ -60,7 +60,7 @@ module RSpecQ
 
     # Include a suite counter in any output filenames so that each suite run
     # Output Junit formatted XML
-    # Output Junit formatted XML to a specifiedd file
+    # Output Junit formatted XML to a specified file
     #
     # Example: test_results/results-{{TEST_ENV_NUMBER}}-{{JOB_INDEX}}.xml
     # where TEST_ENV_NUMBER is substituted with the environment variable
@@ -125,6 +125,10 @@ module RSpecQ
 
         puts
         puts "Executing #{job}"
+
+        unless queue.is_requeue(job).nil?
+          ENV["ERROR_CONTEXT_BASE_PATH"] = "/usr/src/app/log/spec_failures/Rerun_#{queue.is_requeue(job)}"
+        end
 
         reset_rspec_state!
 
