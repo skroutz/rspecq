@@ -126,6 +126,7 @@ module RSpecQ
         puts
         puts "Executing #{job}"
 
+        ENV["ERROR_CONTEXT_BASE_PATH"] = nil
         unless queue.is_requeue(job).nil?
           ENV["ERROR_CONTEXT_BASE_PATH"] = "/usr/src/app/log/spec_failures/Rerun_#{queue.is_requeue(job)}"
         end

@@ -17,9 +17,16 @@ module RSpecQ
         super(output_file)
       end
 
+      def example_passed(notification)
+        # if it is a requeued run, store the notification
+        if !ENV["ERROR_CONTEXT_BASE_PATH"].nil?
+          @requeued_examples << notification.example
+        end
+      end
+
       def example_failed(notification)
         # if it is a requeued run, store the notification
-        if @queue.is_requeue(notification.example.id)
+        if !ENV["ERROR_CONTEXT_BASE_PATH"].nil?
           @requeued_examples << notification.example
         end
       end
