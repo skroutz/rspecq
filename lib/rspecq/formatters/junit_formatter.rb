@@ -18,8 +18,8 @@ module RSpecQ
       end
 
       def example_failed(notification)
-        # if it is requeued, store the notification
-        if @queue.requeueable_job?(notification.example.id, @max_requeues)
+        # if it is a requeued run, store the notification
+        if @queue.is_requeue(notification.example.id)
           @requeued_examples << notification.example
         end
       end
