@@ -9,7 +9,8 @@ module RSpecQ
         @queue = queue
         @job = job
         @max_requeues = max_requeues
-        @requeued_examples = []
+        @requeued_passed_examples = []
+        @requeued_failed_examples = []
         path = path.gsub(/{{TEST_ENV_NUMBER}}/,ENV["TEST_ENV_NUMBER"].to_s)
         path = path.gsub(/{{JOB_INDEX}}/, job_index.to_s)
         RSpec::Support::DirectoryMaker.mkdir_p(File.dirname(path))
@@ -20,30 +21,31 @@ module RSpecQ
       def example_passed(notification)
         # if it is a requeued run, store the notification
         if !ENV["ERROR_CONTEXT_BASE_PATH"].nil?
-          @requeued_examples << notification.example
+          @requeued_passed_examples << notification.example
         end
       end
 
       def example_failed(notification)
         # if it is a requeued run, store the notification
         if !ENV["ERROR_CONTEXT_BASE_PATH"].nil?
-          @requeued_examples << notification.example
+          @requeued_failed_examples << notification.example
         end
       end
 
       private
 
       def example_count
-        @summary_notification.example_count - @requeued_examples.size
+        @summary_notification.example_count - (@requeued_passed_examples.size + @requeued_failed_examples.size)
       end
 
       def failure_count
-        @summary_notification.failure_count - @requeued_examples.size
+        @summary_notification.failure_count - @requeued_failed_examples.size
       end
 
       def examples
+        ignore_examples = @requeued_failed_examples.union(@requeued_passed_examples)
         @examples_notification.notifications.reject do |example_notification|
-          @requeued_examples.map(&:id).include?(example_notification.example.id)
+          ignore_examples.map(&:id).include?(example_notification.example.id)
         end
       end
     end

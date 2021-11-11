@@ -94,7 +94,7 @@ module RSpecQ
       RSpec::Core::Formatters.register(Formatters::ExampleCountRecorder, :dump_summary)
       RSpec::Core::Formatters.register(Formatters::FailureRecorder, :example_failed, :message)
       RSpec::Core::Formatters.register(Formatters::WorkerHeartbeatRecorder, :example_finished)
-      RSpec::Core::Formatters.register(Formatters::JUnitFormatter, :example_failed, :start, :stop, :dump_summary)
+      RSpec::Core::Formatters.register(Formatters::JUnitFormatter, :example_passed, :example_failed, :start, :stop, :dump_summary)
     end
 
     def work
