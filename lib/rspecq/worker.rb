@@ -54,6 +54,9 @@ module RSpecQ
     # The RSpec seed
     attr_accessor :seed
 
+    # Rspec tags
+    attr_accessor :tags
+
     # Reproduction flag. If true, worker will publish files in the exact order
     # given in the command.
     attr_accessor :reproduction
@@ -72,6 +75,7 @@ module RSpecQ
       @max_requeues = 3
       @queue_wait_timeout = 30
       @seed = srand && srand % 0xFFFF
+      @tags = []
       @reproduction = false
 
       RSpec::Core::Formatters.register(Formatters::JobTimingRecorder, :dump_summary)
@@ -122,8 +126,10 @@ module RSpecQ
         if populate_timings
           RSpec.configuration.add_formatter(Formatters::JobTimingRecorder.new(queue, job))
         end
-
-        opts = RSpec::Core::ConfigurationOptions.new(["--format", "progress", job])
+        
+        options = ["--format", "progress", job]
+        tags.each { |tag| options.push(*["--tag", tag]) }
+        opts = RSpec::Core::ConfigurationOptions.new(options)
         _result = RSpec::Core::Runner.new(opts).run($stderr, $stdout)
 
         queue.acknowledge_job(job)
@@ -149,7 +155,6 @@ module RSpecQ
         )
         return
       end
-
       RSpec.configuration.files_or_directories_to_run = files_or_dirs_to_run
       files_to_run = RSpec.configuration.files_to_run.map { |j| relative_path(j) }
 
