@@ -77,6 +77,7 @@ OPTIONS:
         --queue-wait-timeout N       Time to wait for a queue to be ready before considering it failed (default: 30).
         --fail-fast N                Abort build with a non-zero status code after N failed examples.
         --reproduction               Enable reproduction mode: Publish files and examples in the exact order given in the command. Incompatible with --timings.
+        --tag TAG                    Run examples with the specified tag, or exclude examples by adding ~ before the tag.  - e.g. ~slow  - TAG is always converted to a symbol.
     -h, --help                       Show this message.
     -v, --version                    Print the version and exit.
 ```

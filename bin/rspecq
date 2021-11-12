@@ -12,7 +12,9 @@ def env_set?(var)
   ["1", "true"].include?(ENV[var])
 end
 
-opts = {}
+opts = {
+  tags: []
+}
 
 OptionParser.new do |o|
   name = File.basename($PROGRAM_NAME)
@@ -112,6 +114,13 @@ OptionParser.new do |o|
     exit
   end
 
+  o.on("--tag TAG", "Run examples with the specified tag, or exclude examples " \
+       "by adding ~ before the tag." \
+       "  - e.g. ~slow" \
+       "  - TAG is always converted to a symbol.") do |tag|
+    opts[:tags] << tag
+  end
+
   o.on_tail("-v", "--version", "Print the version and exit.") do
     puts "#{name} #{RSpecQ::VERSION}"
     exit
@@ -169,5 +178,6 @@ else
   worker.fail_fast = opts[:fail_fast]
   worker.seed = Integer(opts[:seed]) if opts[:seed]
   worker.reproduction = opts[:reproduction]
+  worker.tags = opts[:tags]
   worker.work
 end
