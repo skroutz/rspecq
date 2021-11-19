@@ -150,7 +150,7 @@ module RSpecQ
           spec_file: filename
         }
 
-        Raven.capture_message(
+        Sentry.capture_message(
           "Flaky test in #{filename}",
           level: "warning",
           extra: extra,
