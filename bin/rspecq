@@ -3,6 +3,8 @@ require "rspecq"
 
 config = RSpecQ::Configuration.new(ARGV)
 
+Sentry.init if ENV['SENTRY_DSN']
+
 if config.report?
   reporter = RSpecQ::Reporter.new(
     build_id: config.build,
