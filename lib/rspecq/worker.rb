@@ -58,6 +58,21 @@ module RSpecQ
     # given in the command.
     attr_accessor :reproduction
 
+    # Include a suite counter in any output filenames so that each suite run
+    # Output Junit formatted XML
+    # Output Junit formatted XML to a specified file
+    #
+    # Example: test_results/results-{{TEST_ENV_NUMBER}}-{{JOB_INDEX}}.xml
+    # where TEST_ENV_NUMBER is substituted with the environment variable
+    # from the gem parallel test, and JOB_INDEX is incremented based
+    # on the number of test suites run in the current process.
+    attr_accessor :junit_output
+
+    # Optional arguments to pass along to rspec.
+    #
+    # Defaults to nil
+    attr_accessor :rspec_args
+
     attr_reader :queue
 
     def initialize(build_id:, worker_id:, redis_opts:)
@@ -65,7 +80,7 @@ module RSpecQ
       @worker_id = worker_id
       @queue = Queue.new(build_id, worker_id, redis_opts)
       @fail_fast = 0
-      @files_or_dirs_to_run = "spec"
+      @files_or_dirs_to_run = ["spec"]
       @populate_timings = false
       @file_split_threshold = 999_999
       @heartbeat_updated_at = nil
@@ -73,11 +88,13 @@ module RSpecQ
       @queue_wait_timeout = 30
       @seed = srand && srand % 0xFFFF
       @reproduction = false
+      @junit_output = nil
 
       RSpec::Core::Formatters.register(Formatters::JobTimingRecorder, :dump_summary)
       RSpec::Core::Formatters.register(Formatters::ExampleCountRecorder, :dump_summary)
       RSpec::Core::Formatters.register(Formatters::FailureRecorder, :example_failed, :message)
       RSpec::Core::Formatters.register(Formatters::WorkerHeartbeatRecorder, :example_finished)
+      RSpec::Core::Formatters.register(Formatters::JUnitFormatter, :example_passed, :example_failed, :start, :stop, :dump_summary)
     end
 
     def work
@@ -86,7 +103,7 @@ module RSpecQ
       try_publish_queue!(queue)
       queue.wait_until_published(queue_wait_timeout)
       queue.save_worker_seed(@worker_id, seed)
-
+      idx = 0
       loop do
         # we have to bootstrap this so that it can be used in the first call
         # to `requeue_lost_job` inside the work loop
@@ -109,6 +126,11 @@ module RSpecQ
         puts
         puts "Executing #{job}"
 
+        ENV["ERROR_CONTEXT_BASE_PATH"] = nil
+        unless queue.is_requeue(job).nil?
+          ENV["ERROR_CONTEXT_BASE_PATH"] = "/usr/src/app/log/spec_failures/Rerun_#{queue.is_requeue(job)}"
+        end
+
         reset_rspec_state!
 
         # reconfigure rspec
@@ -116,6 +138,12 @@ module RSpecQ
         RSpec.configuration.seed = seed
         RSpec.configuration.backtrace_formatter.filter_gem("rspecq")
         RSpec.configuration.add_formatter(Formatters::FailureRecorder.new(queue, job, max_requeues, @worker_id))
+
+        if junit_output
+          RSpec.configuration.add_formatter(Formatters::JUnitFormatter.new(queue, job, max_requeues,
+                                                                           idx, junit_output))
+        end
+
         RSpec.configuration.add_formatter(Formatters::ExampleCountRecorder.new(queue))
         RSpec.configuration.add_formatter(Formatters::WorkerHeartbeatRecorder.new(self))
 
@@ -123,10 +151,13 @@ module RSpecQ
           RSpec.configuration.add_formatter(Formatters::JobTimingRecorder.new(queue, job))
         end
 
-        opts = RSpec::Core::ConfigurationOptions.new(["--format", "progress", job])
+        args = [*rspec_args, "--format", "progress", job]
+        opts = RSpec::Core::ConfigurationOptions.new(args)
+
         _result = RSpec::Core::Runner.new(opts).run($stderr, $stdout)
 
         queue.acknowledge_job(job)
+        idx += 1
       end
     end
 
@@ -225,7 +256,7 @@ module RSpecQ
     # falling back to scheduling them as whole files. Their errors will be
     # reported in the normal flow when they're eventually picked up by a worker.
     def files_to_example_ids(files)
-      cmd = "DISABLE_SPRING=1 bundle exec rspec --dry-run --format json #{files.join(' ')}"
+      cmd = "DISABLE_SPRING=1 SUPPRESS_OUTPUT=1 bundle exec rspec --dry-run --format json #{files.join(' ')}"
       out, err, cmd_result = Open3.capture3(cmd)
 
       if !cmd_result.success?
@@ -265,7 +296,7 @@ module RSpecQ
     def log_event(msg, level, additional = {})
       puts msg
 
-      Raven.capture_message(msg, level: level, extra: {
+      Sentry.capture_message(msg, level: level, extra: {
         build: @build_id,
         worker: @worker_id,
         queue: queue.inspect,

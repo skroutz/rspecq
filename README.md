@@ -109,8 +109,7 @@ $ RSPECQ_BUILD=123 RSPECQ_WORKDER=foo1 rspecq spec/
 
 RSpecQ can optionally emit build events to a
 [Sentry](https://sentry.io) project by setting the
-[`SENTRY_DSN`](https://github.com/getsentry/raven-ruby#raven-only-runs-when-sentry_dsn-is-set)
-environment variable.
+`SENTRY_DSN` environment variable.
 
 This is convenient for monitoring important warnings/errors that may impact
 build times, such as the fact that no previous timings were found and

@@ -1,5 +1,5 @@
 require "rspec/core"
-require "sentry-raven"
+require "sentry-ruby"
 
 module RSpecQ
   # If a worker haven't executed an example for more than WORKER_LIVENESS_SEC
@@ -11,8 +11,11 @@ end
 require_relative "rspecq/formatters/example_count_recorder"
 require_relative "rspecq/formatters/failure_recorder"
 require_relative "rspecq/formatters/job_timing_recorder"
+require_relative "rspecq/formatters/junit_formatter"
 require_relative "rspecq/formatters/worker_heartbeat_recorder"
 
+require_relative "rspecq/configuration"
+require_relative "rspecq/parser"
 require_relative "rspecq/queue"
 require_relative "rspecq/reporter"
 require_relative "rspecq/version"
