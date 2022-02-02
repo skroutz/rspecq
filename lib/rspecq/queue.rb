@@ -210,6 +210,7 @@ module RSpecQ
       @redis.multi do
         @redis.lpush(key_build_times, Float(duration))
         @redis.ltrim(key_build_times, 0, 99)
+        @redis.set(key_build_time, Integer(duration * 1000))
       end
     end
 
@@ -405,6 +406,10 @@ module RSpecQ
     # Last build is at the head of the list.
     def key_build_times
       "build_times"
+    end
+
+    def key_build_time
+      key("build_time")
     end
 
     private
