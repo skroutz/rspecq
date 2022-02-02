@@ -210,7 +210,7 @@ module RSpecQ
       @redis.multi do
         @redis.lpush(key_build_times, Float(duration))
         @redis.ltrim(key_build_times, 0, 99)
-        @redis.set(key_build_time, Float(duration * 1000))
+        @redis.set(key_build_time, Integer(duration * 1000))
       end
     end
 
