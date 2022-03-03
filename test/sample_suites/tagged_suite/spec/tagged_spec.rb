@@ -7,7 +7,7 @@ RSpec.describe do
     expect(true).to be true
   end
 
-  it "is not tagged"do
+  it "is not tagged" do
     expect(true).to be true
   end
 end

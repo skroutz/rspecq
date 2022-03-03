@@ -154,7 +154,7 @@ else
   redis_opts[:host] = opts[:redis_host]
 end
 
-Sentry.init if ENV['SENTRY_DSN']
+Sentry.init if ENV["SENTRY_DSN"]
 
 if opts[:report]
   reporter = RSpecQ::Reporter.new(
