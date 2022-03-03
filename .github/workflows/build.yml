@@ -1,0 +1,42 @@
+name: build
+
+on:
+  push:
+    branches: [$default-branch]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        redis-version: [5]
+
+        ruby-version: [2.5]
+
+        rspec-core-version: [
+          3.8.2,
+          3.9.3,
+          3.10.1,
+          3.11.0,
+        ]
+
+    services:
+      redis:
+        image: "redis:${{ matrix.redis-version }}"
+        ports:
+          - 6379:6379
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: ruby/setup-ruby@v1
+        env:
+          RSPEC_CORE: ${{ matrix.rspec-core-version }}
+        with:
+          ruby-version: ${{ matrix.ruby-version }}
+          bundler-cache: true
+
+      - run: bundle exec rubocop
+      - run: bundle exec rake

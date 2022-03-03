@@ -1,6 +1,6 @@
 RSpec Queue
 =========================================================================
-[![Build Status](https://travis-ci.com/skroutz/rspecq.svg?branch=master)](https://travis-ci.com/github/skroutz/rspecq)
+![Build status](https://github.com/skroutz/rspecq/actions/workflows/build.yml/badge.svg)
 [![Gem Version](https://badge.fury.io/rb/rspecq.svg)](https://badge.fury.io/rb/rspecq)
 
 RSpec Queue (RSpecQ) distributes and executes RSpec suites among parallel
