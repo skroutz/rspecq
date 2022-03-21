@@ -9,6 +9,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
+    name: "Redis ${{ matrix.redis-version }}, Ruby ${{ matrix.ruby-version }}, RSpec ${{ matrix.rspec-core-version }}"
     strategy:
       matrix:
         redis-version: [5]
