@@ -1,5 +1,6 @@
 AllCops:
   NewCops: enable
+  SuggestExtensions: false
 
 Metrics:
   Enabled: false
@@ -46,4 +47,10 @@ Gemspec/RequiredRubyVersion:
   Enabled: false
 
 Naming/MethodParameterName:
+  Enabled: false
+
+Layout/LineEndStringConcatenationIndentation:
+  Enabled: false
+
+Gemspec/RequireMFA:
   Enabled: false

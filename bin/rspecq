@@ -141,10 +141,10 @@ opts[:redis_url] ||= ENV["RSPECQ_REDIS_URL"]
 opts[:fail_fast] ||= Integer(ENV["RSPECQ_FAIL_FAST"] || DEFAULT_FAIL_FAST)
 opts[:reproduction] ||= env_set?("RSPECQ_REPRODUCTION")
 
-# rubocop:disable Style/RaiseArgs, Layout/EmptyLineAfterGuardClause
+# rubocop:disable Style/RaiseArgs
 raise OptionParser::MissingArgument.new(:build) if opts[:build].nil?
 raise OptionParser::MissingArgument.new(:worker) if !opts[:report] && opts[:worker].nil?
-# rubocop:enable Style/RaiseArgs, Layout/EmptyLineAfterGuardClause
+# rubocop:enable Style/RaiseArgs
 
 redis_opts = {}
 

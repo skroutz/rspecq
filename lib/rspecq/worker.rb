@@ -74,7 +74,7 @@ module RSpecQ
       @heartbeat_updated_at = nil
       @max_requeues = 3
       @queue_wait_timeout = 30
-      @seed = srand && srand % 0xFFFF
+      @seed = srand && (srand % 0xFFFF)
       @tags = []
       @reproduction = false
 
