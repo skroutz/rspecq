@@ -217,7 +217,7 @@ module RSpecQ
 
     # ordered by execution time desc (slowest are in the head)
     def timings
-      Hash[@redis.zrevrange(key_timings, 0, -1, withscores: true)]
+      @redis.zrevrange(key_timings, 0, -1, withscores: true).to_h
     end
 
     def example_failures
