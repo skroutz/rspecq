@@ -43,6 +43,9 @@ module RSpecQ
           @queue.record_flaky_failure(notification.example.id, msg)
           sleep 0.5
           return
+        else
+          # returns nil when hit requeue limit, use exit code 1
+          @queue.exit_code = 1
         end
 
         msg << "\n"

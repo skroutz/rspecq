@@ -96,7 +96,7 @@ module RSpecQ
         # to `requeue_lost_job` inside the work loop
         update_heartbeat
 
-        return if queue.build_failed_fast?
+        return queue.exit_code if queue.build_failed_fast?
 
         lost = queue.requeue_lost_job
         puts "Requeued lost job: #{lost}" if lost
@@ -106,7 +106,7 @@ module RSpecQ
         job = queue.reserve_job
 
         # build is finished
-        return if job.nil? && queue.exhausted?
+        return queue.exit_code if job.nil? && queue.exhausted?
 
         next if job.nil?
 

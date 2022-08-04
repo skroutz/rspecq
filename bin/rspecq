@@ -181,5 +181,5 @@ else
   worker.seed = Integer(opts[:seed]) if opts[:seed]
   worker.reproduction = opts[:reproduction]
   worker.tags = opts[:tags]
-  worker.work
+  exit worker.work
 end
