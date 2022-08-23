@@ -46,6 +46,19 @@ module RSpecQ
     # Defaults to 0
     attr_accessor :fail_fast
 
+    # Output Junit formatted XML to a specifiedd file
+    #
+    # Example: test_results/results-{{TEST_ENV_NUMBER}}-{{JOB_INDEX}}.xml
+    # where TEST_ENV_NUMBER is substituted with the environment variable
+    # from the gem parallel test, and JOB_INDEX is incremented based
+    # on the number of test suites run in the current process.
+    attr_accessor :junit_output
+
+    # Optional arguments to pass along to rspec.
+    #
+    # Defaults to nil
+    attr_accessor :rspec_args
+
     # Time to wait for a queue to be published.
     #
     # Defaults to 30
@@ -73,6 +86,7 @@ module RSpecQ
       @file_split_threshold = 999_999
       @heartbeat_updated_at = nil
       @max_requeues = 3
+      @junit_output = nil
       @queue_wait_timeout = 30
       @seed = srand && (srand % 0xFFFF)
       @tags = []
@@ -82,14 +96,17 @@ module RSpecQ
       RSpec::Core::Formatters.register(Formatters::ExampleCountRecorder, :dump_summary)
       RSpec::Core::Formatters.register(Formatters::FailureRecorder, :example_failed, :message)
       RSpec::Core::Formatters.register(Formatters::WorkerHeartbeatRecorder, :example_finished)
+      RSpec::Core::Formatters.register(Formatters::JUnitFormatter, :example_failed, :start, :stop, :dump_summary)
     end
 
     def work
       puts "Working for build #{@build_id} (worker=#{@worker_id})"
 
       try_publish_queue!(queue)
+
       queue.wait_until_published(queue_wait_timeout)
       queue.save_worker_seed(@worker_id, seed)
+      idx = 0
 
       loop do
         # we have to bootstrap this so that it can be used in the first call
@@ -119,6 +136,12 @@ module RSpecQ
         RSpec.configuration.detail_color = :magenta
         RSpec.configuration.seed = seed
         RSpec.configuration.backtrace_formatter.filter_gem("rspecq")
+
+        if junit_output
+          RSpec.configuration.add_formatter(Formatters::JUnitFormatter.new(queue, job, max_requeues,
+                                                                           idx, junit_output))
+        end
+
         RSpec.configuration.add_formatter(Formatters::FailureRecorder.new(queue, job, max_requeues, @worker_id))
         RSpec.configuration.add_formatter(Formatters::ExampleCountRecorder.new(queue))
         RSpec.configuration.add_formatter(Formatters::WorkerHeartbeatRecorder.new(self))
@@ -127,12 +150,13 @@ module RSpecQ
           RSpec.configuration.add_formatter(Formatters::JobTimingRecorder.new(queue, job))
         end
 
-        options = ["--format", "progress", job]
+        options = [*rspec_args, "--format", "progress", job]
         tags.each { |tag| options.push("--tag", tag) }
         opts = RSpec::Core::ConfigurationOptions.new(options)
         _result = RSpec::Core::Runner.new(opts).run($stderr, $stdout)
 
         queue.acknowledge_job(job)
+        idx += 1
       end
     end
 

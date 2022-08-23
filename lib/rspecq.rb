@@ -11,6 +11,7 @@ end
 require_relative "rspecq/formatters/example_count_recorder"
 require_relative "rspecq/formatters/failure_recorder"
 require_relative "rspecq/formatters/job_timing_recorder"
+require_relative "rspecq/formatters/junit_formatter"
 require_relative "rspecq/formatters/worker_heartbeat_recorder"
 
 require_relative "rspecq/queue"
