@@ -9,10 +9,11 @@ module RSpecQ
   #
   # Reporters are readers of the queue.
   class Reporter
-    def initialize(build_id:, timeout:, redis_opts:)
+    def initialize(build_id:, timeout:, redis_opts:, queue_wait_timeout: 30)
       @build_id = build_id
       @timeout = timeout
       @queue = Queue.new(build_id, "reporter", redis_opts)
+      @queue_wait_timeout = queue_wait_timeout
 
       # We want feedback to be immediattely printed to CI users, so
       # we disable buffering.
@@ -20,7 +21,7 @@ module RSpecQ
     end
 
     def report
-      @queue.wait_until_published
+      @queue.wait_until_published(@queue_wait_timeout)
 
       finished = false
 
@@ -106,7 +107,16 @@ module RSpecQ
       if !flaky_jobs.empty?
         summary << "\n\n"
         summary << "Flaky jobs detected (count=#{flaky_jobs.count}):\n"
-        flaky_jobs.each { |j| summary << "  #{j}\n" }
+        flaky_jobs.each do |j|
+          summary << RSpec::Core::Formatters::ConsoleCodes.wrap(
+            "#{@queue.job_location(j)} @ #{@queue.failed_job_worker(j)}\n",
+            RSpec.configuration.pending_color
+          )
+
+          next if ENV["RSPECQ_REPORTER_RERUN_COMMAND_SKIP"]
+
+          summary << "#{@queue.job_rerun_command(j)}\n\n\n"
+        end
       end
 
       summary
@@ -124,16 +134,15 @@ module RSpecQ
       return if jobs.empty?
 
       jobs.each do |job|
-        filename = job.sub(/\[.+\]/, "")
+        filename = job.sub(/\[.+\]/, "")[%r{spec/.+}].split(":")[0]
 
         extra = {
           build: @build_id,
           build_timeout: @timeout,
-          queue: @queue.inspect,
-          object: inspect,
-          pid: Process.pid,
-          job_path: job,
-          build_duration: build_duration
+          build_duration: build_duration,
+          location: @queue.job_location(job),
+          rerun_command: @queue.job_rerun_command(job),
+          worker: @queue.failed_job_worker(job)
         }
 
         tags = {
@@ -141,7 +150,7 @@ module RSpecQ
           spec_file: filename
         }
 
-        Raven.capture_message(
+        Sentry.capture_message(
           "Flaky test in #{filename}",
           level: "warning",
           extra: extra,

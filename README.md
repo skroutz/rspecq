@@ -1,6 +1,6 @@
 RSpec Queue
 =========================================================================
-[![Build Status](https://travis-ci.com/skroutz/rspecq.svg?branch=master)](https://travis-ci.com/github/skroutz/rspecq)
+![Build status](https://github.com/skroutz/rspecq/actions/workflows/build.yml/badge.svg)
 [![Gem Version](https://badge.fury.io/rb/rspecq.svg)](https://badge.fury.io/rb/rspecq)
 
 RSpec Queue (RSpecQ) distributes and executes RSpec suites among parallel
@@ -64,6 +64,7 @@ USAGE:
 OPTIONS:
     -b, --build ID                   A unique identifier for the build. Should be common among workers participating in the same build.
     -w, --worker ID                  An identifier for the worker. Workers participating in the same build should have distinct IDs.
+        --seed SEED                  The RSpec seed. Passing the seed can be helpful in many ways i.e reproduction and testing.
     -r, --redis HOST                 --redis is deprecated. Use --redis-host or --redis-url instead. Redis host to connect to (default: 127.0.0.1).
         --redis-host HOST            Redis host to connect to (default: 127.0.0.1).
         --redis-url URL              Redis URL to connect to (e.g.: redis://127.0.0.1:6379/0).
@@ -73,22 +74,47 @@ OPTIONS:
                                      Exits with a non-zero status code if there were any failures.
         --report-timeout N           Fail if build is not finished after N seconds. Only applicable if --report is enabled (default: 3600).
         --max-requeues N             Retry failed examples up to N times before considering them legit failures (default: 3).
+        --queue-wait-timeout N       Time to wait for a queue to be ready before considering it failed (default: 30).
         --fail-fast N                Abort build with a non-zero status code after N failed examples.
+        --reproduction               Enable reproduction mode: Publish files and examples in the exact order given in the command. Incompatible with --timings.
+        --tag TAG                    Run examples with the specified tag, or exclude examples by adding ~ before the tag.  - e.g. ~slow  - TAG is always converted to a symbol.
     -h, --help                       Show this message.
     -v, --version                    Print the version and exit.
 ```
+
+You can set most options using ENV variables:
+
+```shell
+$ RSPECQ_BUILD=123 RSPECQ_WORKER=foo1 rspecq spec/
+```
+
+### Supported ENV variables
+
+| Name | Desc |
+| --- | --- |
+| `RSPECQ_BUILD` | Build ID |
+| `RSPECQ_WORKER` | Worker ID |
+| `RSPECQ_SEED` | RSpec seed |
+| `RSPECQ_REDIS` | Redis HOST |
+| `RSPECQ_UPDATE_TIMINGS` | Timings |
+| `RSPECQ_FILE_SPLIT_THRESHOLD` | File split threshold |
+| `RSPECQ_REPORT` | Report |
+| `RSPECQ_REPORT_TIMEOUT` | Report Timeout |
+| `RSPECQ_MAX_REQUEUES` | Max requests |
+| `RSPECQ_QUEUE_WAIT_TIMEOUT` | Queue wait timeout |
+| `RSPECQ_REDIS_URL` | Redis URL |
+| `RSPECQ_FAIL_FAST` | Fail fast |
+| `RSPECQ_REPORTER_RERUN_COMMAND_SKIP` | Do not report flaky test's rerun command |
 
 ### Sentry integration
 
 RSpecQ can optionally emit build events to a
 [Sentry](https://sentry.io) project by setting the
-[`SENTRY_DSN`](https://github.com/getsentry/raven-ruby#raven-only-runs-when-sentry_dsn-is-set)
-environment variable.
+`SENTRY_DSN` environment variable.
 
 This is convenient for monitoring important warnings/errors that may impact
 build times, such as the fact that no previous timings were found and
 therefore job scheduling was effectively random for a particular build.
-
 
 ## How it works
 
@@ -116,7 +142,7 @@ For example, a single file may need 10 minutes to run while all other
 files finish after 8 minutes. This would cause all but one workers to be
 sitting idle for 2 minutes.
 
-To overcome this issue, RSpecQ can splits files which their execution time is
+To overcome this issue, RSpecQ can split files which their execution time is
 above a certain threshold (set with the `--file-split-threshold` option)
 and instead schedule them as individual examples.
 
@@ -215,6 +241,13 @@ To enable verbose output in the tests:
 $ RSPECQ_DEBUG=1 bundle exec rake
 ```
 
+## Redis
+
+RSpecQ by design doesn't expire its keys from Redis. It is left to the user
+to configure the Redis server to do so; see
+[Using Redis as an LRU cache](https://redis.io/topics/lru-cache) for more info.
+
+You can do this from a configuration file or with `redis-cli`.
 
 ## License
 

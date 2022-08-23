@@ -51,8 +51,12 @@ module RSpecQ
     REQUEUE_JOB = <<~LUA.freeze
       local key_queue_unprocessed = KEYS[1]
       local key_requeues = KEYS[2]
+      local key_requeued_job_original_worker = KEYS[3]
+      local key_job_location = KEYS[4]
       local job = ARGV[1]
       local max_requeues = ARGV[2]
+      local original_worker = ARGV[3]
+      local location = ARGV[4]
 
       local requeued_times = redis.call('hget', key_requeues, job)
       if requeued_times and requeued_times >= max_requeues then
@@ -60,7 +64,9 @@ module RSpecQ
       end
 
       redis.call('lpush', key_queue_unprocessed, job)
+      redis.call('hset', key_requeued_job_original_worker, job, original_worker)
       redis.call('hincrby', key_requeues, job, 1)
+      redis.call('hset', key_job_location, job, location)
 
       return true
     LUA
@@ -91,10 +97,10 @@ module RSpecQ
 
     # NOTE: jobs will be processed from head to tail (lpop)
     def publish(jobs, fail_fast = 0)
-      @redis.multi do
-        @redis.hset(key_queue_config, "fail_fast", fail_fast)
-        @redis.rpush(key_queue_unprocessed, jobs)
-        @redis.set(key_queue_status, STATUS_READY)
+      redis.multi do |pipeline|
+        pipeline.hset(key_queue_config, "fail_fast", fail_fast)
+        pipeline.rpush(key_queue_unprocessed, jobs)
+        pipeline.set(key_queue_status, STATUS_READY)
       end.first
     end
 
@@ -127,9 +133,10 @@ module RSpecQ
     # NOTE: The same job might happen to be acknowledged more than once, in
     # the case of requeues.
     def acknowledge_job(job)
-      @redis.multi do
-        @redis.hdel(key_queue_running, @worker_id)
-        @redis.sadd(key_queue_processed, job)
+      redis.multi do |pipeline|
+        pipeline.hdel(key_queue_running, @worker_id)
+        pipeline.sadd(key_queue_processed, job)
+        pipeline.rpush(key("queue", "jobs_per_worker", @worker_id), job)
       end
     end
 
@@ -138,13 +145,16 @@ module RSpecQ
     #
     # Returns nil if the job hit the requeue limit and therefore was not
     # requeued and should be considered a failure.
-    def requeue_job(job, max_requeues)
+    def requeue_job(example, max_requeues, original_worker_id)
       return false if max_requeues.zero?
+
+      job = example.id
+      location = example.location_rerun_argument
 
       @redis.eval(
         REQUEUE_JOB,
-        keys: [key_queue_unprocessed, key_requeues],
-        argv: [job, max_requeues]
+        keys: [key_queue_unprocessed, key_requeues, key("requeued_job_original_worker"), key("job_location")],
+        argv: [job, max_requeues, original_worker_id, location]
       )
     end
 
@@ -156,6 +166,27 @@ module RSpecQ
         keys: [key_requeues_formatter_stats],
         argv: [job, max_requeues]
       )
+
+    def save_worker_seed(worker, seed)
+      @redis.hset(key("worker_seed"), worker, seed)
+    end
+
+    def job_location(job)
+      @redis.hget(key("job_location"), job)
+    end
+
+    def failed_job_worker(job)
+      redis.hget(key("requeued_job_original_worker"), job)
+    end
+
+    def job_rerun_command(job)
+      worker = failed_job_worker(job)
+      jobs = redis.lrange(key("queue", "jobs_per_worker", worker), 0, -1)
+      seed = redis.hget(key("worker_seed"), worker)
+
+      "DISABLE_SPRING=1 DISABLE_BOOTSNAP=1 bin/rspecq --build 1 " \
+        "--worker foo --seed #{seed} --max-requeues 0 --fail-fast 1 " \
+        "--reproduction #{jobs.join(' ')}"
     end
 
     def record_example_failure(example_id, message)
@@ -172,9 +203,9 @@ module RSpecQ
     end
 
     def record_build_time(duration)
-      @redis.multi do
-        @redis.lpush(key_build_times, Float(duration))
-        @redis.ltrim(key_build_times, 0, 99)
+      redis.multi do |pipeline|
+        pipeline.lpush(key_build_times, Float(duration))
+        pipeline.ltrim(key_build_times, 0, 99)
       end
     end
 
@@ -208,7 +239,7 @@ module RSpecQ
 
     # ordered by execution time desc (slowest are in the head)
     def timings
-      Hash[@redis.zrevrange(key_timings, 0, -1, withscores: true)]
+      @redis.zrevrange(key_timings, 0, -1, withscores: true).to_h
     end
 
     def example_failures
@@ -223,9 +254,9 @@ module RSpecQ
     def exhausted?
       return false if !published?
 
-      @redis.multi do
-        @redis.llen(key_queue_unprocessed)
-        @redis.hlen(key_queue_running)
+      redis.multi do |pipeline|
+        pipeline.llen(key_queue_unprocessed)
+        pipeline.hlen(key_queue_running)
       end.inject(:+).zero?
     end
 
@@ -284,9 +315,9 @@ module RSpecQ
         return false
       end
 
-      @redis.multi do
-        @redis.hlen(key_failures)
-        @redis.hlen(key_errors)
+      redis.multi do |pipeline|
+        pipeline.hlen(key_failures)
+        pipeline.hlen(key_errors)
       end.inject(:+) >= fail_fast
     end
 

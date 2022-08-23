@@ -6,12 +6,13 @@ module RSpecQ
     # Also persists non-example error information (e.g. a syntax error that
     # in a spec file).
     class FailureRecorder
-      def initialize(queue, job, max_requeues)
+      def initialize(queue, job, max_requeues, worker_id)
         @queue = queue
         @job = job
         @colorizer = RSpec::Core::Formatters::ConsoleCodes
         @non_example_error_recorded = false
         @max_requeues = max_requeues
+        @worker_id = worker_id
       end
 
       # Here we're notified about errors occuring outside of examples.
@@ -30,7 +31,7 @@ module RSpecQ
       def example_failed(notification)
         example = notification.example
 
-        if @queue.requeue_job(example.id, @max_requeues)
+        if @queue.requeue_job(example, @max_requeues, @worker_id)
           # HACK: try to avoid picking the job we just requeued; we want it
           # to be picked up by a different worker
           sleep 0.5
@@ -44,7 +45,7 @@ module RSpecQ
         msg = presenter.fully_formatted(nil, @colorizer)
         msg << "\n"
         msg << @colorizer.wrap(
-          "bin/rspec #{example.location_rerun_argument}",
+          "bin/rspec --seed #{RSpec.configuration.seed} #{example.location_rerun_argument}",
           RSpec.configuration.failure_color
         )
 

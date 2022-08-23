@@ -4,6 +4,35 @@ Breaking changes are prefixed with a "[BREAKING]" label.
 
 ## master (unreleased)
 
+## 0.7.2 (2021-11-15)
+
+- Add tag option to filter specs (@jorge-wonolo)
+
+## 0.7.1 (2021-04-08)
+
+- New env variable RSPECQ_REPORTER_RERUN_COMMAND_SKIP. When set, the reporter
+  does not include the flaky test's rerun command.
+
+## 0.7.0 (2021-04-01)
+
+- New cli parameter `reproduction`.
+  When passed, primary worker publishes the queue in the same order as passed
+  in the command.
+- Reporter now includes a reproduction command for flaky tests.
+
+## 0.6.0 (2021-03-23)
+
+- New cli parameter `seed`.
+  The seed is passed to the RSpec command.
+
+## 0.5.0 (2021-02-05)
+
+### Added
+
+- New cli parameter `queue_wait_timeout`.
+  It configured the time a queue can wait to be ready. The env equivalent
+  is `RSPECQ_QUEUE_WAIT_TIMEOUT`. [#51](https://github.com/skroutz/rspecq/pull/51)
+
 ## 0.4.0 (2020-10-07)
 
 ### Added
@@ -27,7 +56,7 @@ Breaking changes are prefixed with a "[BREAKING]" label.
 ## 0.2.2 (2020-09-10)
 
 ### Fixed
-- Worker would fail if application code was writing to stderr 
+- Worker would fail if application code was writing to stderr
  [[#35](https://github.com/skroutz/rspecq/pull/35)]
 
 ## 0.2.1 (2020-09-09)

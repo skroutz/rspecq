@@ -59,6 +59,21 @@ module RSpecQ
     # Defaults to nil
     attr_accessor :rspec_args
 
+    # Time to wait for a queue to be published.
+    #
+    # Defaults to 30
+    attr_accessor :queue_wait_timeout
+
+    # The RSpec seed
+    attr_accessor :seed
+
+    # Rspec tags
+    attr_accessor :tags
+
+    # Reproduction flag. If true, worker will publish files in the exact order
+    # given in the command.
+    attr_accessor :reproduction
+
     attr_reader :queue
 
     def initialize(build_id:, worker_id:, redis_opts:)
@@ -72,6 +87,10 @@ module RSpecQ
       @heartbeat_updated_at = nil
       @max_requeues = 3
       @junit_output = nil
+      @queue_wait_timeout = 30
+      @seed = srand && (srand % 0xFFFF)
+      @tags = []
+      @reproduction = false
 
       RSpec::Core::Formatters.register(Formatters::JobTimingRecorder, :dump_summary)
       RSpec::Core::Formatters.register(Formatters::ExampleCountRecorder, :dump_summary)
@@ -84,8 +103,11 @@ module RSpecQ
       puts "Working for build #{@build_id} (worker=#{@worker_id})"
 
       try_publish_queue!(queue)
-      queue.wait_until_published
+
+      queue.wait_until_published(queue_wait_timeout)
+      queue.save_worker_seed(@worker_id, seed)
       idx = 0
+
       loop do
         # we have to bootstrap this so that it can be used in the first call
         # to `requeue_lost_job` inside the work loop
@@ -112,7 +134,7 @@ module RSpecQ
 
         # reconfigure rspec
         RSpec.configuration.detail_color = :magenta
-        RSpec.configuration.seed = srand && srand % 0xFFFF
+        RSpec.configuration.seed = seed
         RSpec.configuration.backtrace_formatter.filter_gem("rspecq")
 
         if junit_output
@@ -120,7 +142,7 @@ module RSpecQ
                                                                            idx, junit_output))
         end
 
-        RSpec.configuration.add_formatter(Formatters::FailureRecorder.new(queue, job, max_requeues))
+        RSpec.configuration.add_formatter(Formatters::FailureRecorder.new(queue, job, max_requeues, @worker_id))
         RSpec.configuration.add_formatter(Formatters::ExampleCountRecorder.new(queue))
         RSpec.configuration.add_formatter(Formatters::WorkerHeartbeatRecorder.new(self))
 
@@ -128,9 +150,9 @@ module RSpecQ
           RSpec.configuration.add_formatter(Formatters::JobTimingRecorder.new(queue, job))
         end
 
-        args = [*rspec_args, "--format", "progress", job]
-        opts = RSpec::Core::ConfigurationOptions.new(args)
-
+        options = [*rspec_args, "--format", "progress", job]
+        tags.each { |tag| options.push("--tag", tag) }
+        opts = RSpec::Core::ConfigurationOptions.new(options)
         _result = RSpec::Core::Runner.new(opts).run($stderr, $stdout)
 
         queue.acknowledge_job(job)
@@ -149,6 +171,14 @@ module RSpecQ
     def try_publish_queue!(queue)
       return if !queue.become_master
 
+      if reproduction
+        q_size = queue.publish(files_or_dirs_to_run, fail_fast)
+        log_event(
+          "Reproduction mode. Published queue as given (size=#{q_size})",
+          "info"
+        )
+        return
+      end
       RSpec.configuration.files_or_directories_to_run = files_or_dirs_to_run
       files_to_run = RSpec.configuration.files_to_run.map { |j| relative_path(j) }
 
@@ -264,7 +294,7 @@ module RSpecQ
     def log_event(msg, level, additional = {})
       puts msg
 
-      Raven.capture_message(msg, level: level, extra: {
+      Sentry.capture_message(msg, level: level, extra: {
         build: @build_id,
         worker: @worker_id,
         queue: queue.inspect,

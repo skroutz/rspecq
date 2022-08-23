@@ -5,13 +5,16 @@ require "rspecq"
 DEFAULT_REDIS_HOST = "127.0.0.1".freeze
 DEFAULT_REPORT_TIMEOUT = 3600 # 1 hour
 DEFAULT_MAX_REQUEUES = 3
+DEFAULT_QUEUE_WAIT_TIMEOUT = 30
 DEFAULT_FAIL_FAST = 0
 
 def env_set?(var)
   ["1", "true"].include?(ENV[var])
 end
 
-opts = {}
+opts = {
+  tags: []
+}
 
 OptionParser.new do |o|
   name = File.basename($PROGRAM_NAME)
@@ -37,9 +40,14 @@ OptionParser.new do |o|
     opts[:worker] = v
   end
 
+  o.on("--seed SEED", "The RSpec seed. Passing the seed can be helpful in " \
+    "many ways i.e reproduction and testing.") do |v|
+    opts[:seed] = v
+  end
+
   o.on("-r", "--redis HOST", "Redis host to connect to " \
        "(default: #{DEFAULT_REDIS_HOST}).") do |v|
-    puts "--redis is deprecated. Use --redis-host or --redis-url instead"
+    puts "DEPRECATION: --redis is deprecated. Use --redis-host or --redis-url instead"
     opts[:redis_host] = v
   end
 
@@ -84,6 +92,12 @@ OptionParser.new do |o|
     opts[:max_requeues] = v
   end
 
+  o.on("--queue-wait-timeout N", Integer, "Time to wait for a queue to be "   \
+       "ready before considering it failed "                                  \
+       "(default: #{DEFAULT_QUEUE_WAIT_TIMEOUT}).") do |v|
+    opts[:queue_wait_timeout] = v
+  end
+
   o.on("--fail-fast N", Integer, "Abort build with a non-zero status code " \
        "after N failed examples.") do |v|
     opts[:fail_fast] = v
@@ -96,9 +110,22 @@ OptionParser.new do |o|
     opts[:junit_output] = v
   end
 
+  o.on("--reproduction", "Enable reproduction mode: run rspec on the given files " \
+       "and examples in the exact order they are given. Incompatible with " \
+       "--timings.") do |v|
+    opts[:reproduction] = v
+  end
+
   o.on_tail("-h", "--help", "Show this message.") do
     puts o
     exit
+  end
+
+  o.on("--tag TAG", "Run examples with the specified tag, or exclude examples " \
+       "by adding ~ before the tag." \
+       "  - e.g. ~slow" \
+       "  - TAG is always converted to a symbol.") do |tag|
+    opts[:tags] << tag
   end
 
   o.on_tail("-v", "--version", "Print the version and exit.") do
@@ -109,20 +136,23 @@ end.parse!
 
 opts[:build] ||= ENV["RSPECQ_BUILD"]
 opts[:worker] ||= ENV["RSPECQ_WORKER"]
+opts[:seed] ||= ENV["RSPECQ_SEED"]
 opts[:redis_host] ||= ENV["RSPECQ_REDIS"] || DEFAULT_REDIS_HOST
 opts[:timings] ||= env_set?("RSPECQ_UPDATE_TIMINGS")
 opts[:file_split_threshold] ||= Integer(ENV["RSPECQ_FILE_SPLIT_THRESHOLD"] || 9_999_999)
 opts[:report] ||= env_set?("RSPECQ_REPORT")
 opts[:report_timeout] ||= Integer(ENV["RSPECQ_REPORT_TIMEOUT"] || DEFAULT_REPORT_TIMEOUT)
 opts[:max_requeues] ||= Integer(ENV["RSPECQ_MAX_REQUEUES"] || DEFAULT_MAX_REQUEUES)
+opts[:queue_wait_timeout] ||= Integer(ENV["RSPECQ_QUEUE_WAIT_TIMEOUT"] || DEFAULT_QUEUE_WAIT_TIMEOUT)
 opts[:redis_url] ||= ENV["RSPECQ_REDIS_URL"]
 opts[:fail_fast] ||= Integer(ENV["RSPECQ_FAIL_FAST"] || DEFAULT_FAIL_FAST)
+opts[:reproduction] ||= env_set?("RSPECQ_REPRODUCTION")
 opts[:junit_output] ||= ENV["RSPECQ_JUNIT_OUTPUT"]
 
-# rubocop:disable Style/RaiseArgs, Layout/EmptyLineAfterGuardClause
+# rubocop:disable Style/RaiseArgs
 raise OptionParser::MissingArgument.new(:build) if opts[:build].nil?
 raise OptionParser::MissingArgument.new(:worker) if !opts[:report] && opts[:worker].nil?
-# rubocop:enable Style/RaiseArgs, Layout/EmptyLineAfterGuardClause
+# rubocop:enable Style/RaiseArgs
 
 redis_opts = {}
 
@@ -131,6 +161,8 @@ if opts[:redis_url]
 else
   redis_opts[:host] = opts[:redis_host]
 end
+
+Sentry.init if ENV["SENTRY_DSN"]
 
 # Use the RSpec parser to parse any command line args intended for rspec such
 # as `-- --format JUnit -o foo.xml` so that we can pass these args to rspec
@@ -149,7 +181,8 @@ if opts[:report]
   reporter = RSpecQ::Reporter.new(
     build_id: opts[:build],
     timeout: opts[:report_timeout],
-    redis_opts: redis_opts
+    redis_opts: redis_opts,
+    queue_wait_timeout: opts[:queue_wait_timeout]
   )
 
   reporter.report
@@ -165,7 +198,11 @@ else
   worker.populate_timings = opts[:timings]
   worker.file_split_threshold = opts[:file_split_threshold]
   worker.max_requeues = opts[:max_requeues]
+  worker.queue_wait_timeout = opts[:queue_wait_timeout]
   worker.fail_fast = opts[:fail_fast]
+  worker.seed = Integer(opts[:seed]) if opts[:seed]
+  worker.reproduction = opts[:reproduction]
+  worker.tags = opts[:tags]
   worker.junit_output = opts[:junit_output]
   worker.work
 end

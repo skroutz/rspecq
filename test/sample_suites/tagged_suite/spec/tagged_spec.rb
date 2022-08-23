@@ -1,4 +1,13 @@
 RSpec.describe do
-  it("foo", :foo) { expect(true).to be true }
-  it("bar", :bar) { expect(true).to be true }
+  it "is slow", :slow do
+    expect(true).to be true
+  end
+
+  it "is fast", :fast do
+    expect(true).to be true
+  end
+
+  it "is not tagged" do
+    expect(true).to be true
+  end
 end
