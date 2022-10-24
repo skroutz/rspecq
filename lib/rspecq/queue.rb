@@ -177,6 +177,10 @@ module RSpecQ
       @redis.hset(key_failures, example_id, message)
     end
 
+    def record_flaky_failure(example_id, message)
+      @redis.hset(key_flaky_failures, example_id, message)
+    end
+
     # For errors occured outside of examples (e.g. while loading a spec file)
     def record_non_example_error(job, message)
       @redis.hset(key_errors, job, message)
@@ -249,6 +253,10 @@ module RSpecQ
 
     def example_failures
       @redis.hgetall(key_failures)
+    end
+
+    def flaky_failures
+      @redis.hgetall(key_flaky_failures)
     end
 
     def non_example_errors
@@ -356,6 +364,13 @@ module RSpecQ
     # redis: HASH<example_id => error message>
     def key_failures
       key("example_failures")
+    end
+
+    # Contains flaky RSpec example failures.
+    #
+    # redis: HASH<example_id => error message>
+    def key_flaky_failures
+      key("flaky_failures")
     end
 
     # Contains errors raised outside of RSpec examples
