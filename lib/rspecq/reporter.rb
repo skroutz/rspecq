@@ -60,7 +60,7 @@ module RSpecQ
       puts summary(@queue.example_failures, @queue.non_example_errors,
         flaky_jobs)
 
-      flaky_jobs_to_sentry(flaky_jobs, build_duration)
+      flaky_jobs_to_sentry(flaky_jobs, build_duration, @queue.flaky_failures)
 
       exit 1 if !@queue.build_successful?
     end
@@ -145,7 +145,7 @@ module RSpecQ
       format("%<min>d:%<sec>02d", min: min, sec: sec)
     end
 
-    def flaky_jobs_to_sentry(jobs, build_duration)
+    def flaky_jobs_to_sentry(jobs, build_duration, failures)
       return if jobs.empty?
 
       jobs.each do |job|
@@ -157,7 +157,8 @@ module RSpecQ
           build_duration: build_duration,
           location: @queue.job_location(job),
           rerun_command: @queue.job_rerun_command(job),
-          worker: @queue.failed_job_worker(job)
+          worker: @queue.failed_job_worker(job),
+          output: failures[job]
         }
 
         tags = {
