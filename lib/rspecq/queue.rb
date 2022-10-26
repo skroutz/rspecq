@@ -83,8 +83,19 @@ module RSpecQ
     end
 
     # NOTE: jobs will be processed from head to tail (lpop)
+    # Also some state keys are wiped to facilitate re-runs
+    # with the same job build prefix.
     def publish(jobs, fail_fast = 0)
+      cleanup_keys = [
+        key_queue_unprocessed, key_queue_running, key_queue_processed, key_failures,
+        key_flaky_failures, key_errors, key_requeues, key_example_count,
+        key_worker_heartbeats
+      ]
+
       @redis.multi do
+        cleanup_keys.each do |key|
+          @redis.del(key)
+        end
         @redis.hset(key_queue_config, "fail_fast", fail_fast)
         @redis.rpush(key_queue_unprocessed, jobs)
         @redis.set(key_queue_status, STATUS_READY)
