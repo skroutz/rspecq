@@ -168,8 +168,8 @@ module RSpecQ
       jobs = redis.lrange(key("queue", "jobs_per_worker", worker), 0, -1)
       seed = redis.hget(key("worker_seed"), worker)
 
-      "DISABLE_SPRING=1 DISABLE_BOOTSNAP=1 bin/rspecq --build 1 " \
-        "--worker foo --seed #{seed} --max-requeues 0 --fail-fast 1 " \
+      "DISABLE_SPRING=1 DISABLE_BOOTSNAP=1 bin/rspecq " \
+        "--seed #{seed} --max-requeues 0 --fail-fast 1 " \
         "--reproduction #{jobs.join(' ')}"
     end
 
