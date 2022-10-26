@@ -232,8 +232,8 @@ module RSpecQ
       job_index = jobs.find_index(job) || jobs.find_index(job.split("[")[0]) || -1
       seed = redis.hget(key("worker_seed"), worker)
 
-      "DISABLE_SPRING=1 DISABLE_BOOTSNAP=1 bin/rspecq --build 1 " \
-        "--worker foo --seed #{seed} --max-requeues 0 --fail-fast 1 " \
+      "DISABLE_SPRING=1 DISABLE_BOOTSNAP=1 bin/rspecq " \
+        "--seed #{seed} --max-requeues 0 --fail-fast 1 " \
         "--reproduction #{jobs[0..job_index].join(' ')}"
     end
 
