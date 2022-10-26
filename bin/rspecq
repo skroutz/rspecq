@@ -2,6 +2,8 @@
 require "optparse"
 require "rspecq"
 
+DEFAULT_WORKER = "foo".freeze
+DEFAULT_BUILD = "bar".freeze
 DEFAULT_REDIS_HOST = "127.0.0.1".freeze
 DEFAULT_REPORT_TIMEOUT = 3600 # 1 hour
 DEFAULT_MAX_REQUEUES = 3
@@ -127,8 +129,8 @@ OptionParser.new do |o|
   end
 end.parse!
 
-opts[:build] ||= ENV["RSPECQ_BUILD"]
-opts[:worker] ||= ENV["RSPECQ_WORKER"]
+opts[:build] ||= ENV["RSPECQ_BUILD"] || DEFAULT_BUILD
+opts[:worker] ||= ENV["RSPECQ_WORKER"] || DEFAULT_WORKER
 opts[:seed] ||= ENV["RSPECQ_SEED"]
 opts[:redis_host] ||= ENV["RSPECQ_REDIS"] || DEFAULT_REDIS_HOST
 opts[:timings] ||= env_set?("RSPECQ_UPDATE_TIMINGS")

@@ -83,8 +83,19 @@ module RSpecQ
     end
 
     # NOTE: jobs will be processed from head to tail (lpop)
+    # Also some state keys are wiped to facilitate re-runs
+    # with the same job build prefix.
     def publish(jobs, fail_fast = 0)
+      cleanup_keys = [
+        key_queue_unprocessed, key_queue_running, key_queue_processed, key_failures,
+        key_flaky_failures, key_errors, key_requeues, key_example_count,
+        key_worker_heartbeats
+      ]
+
       redis.multi do |pipeline|
+        cleanup_keys.each do |key|
+          pipeline.del(key)
+        end
         pipeline.hset(key_queue_config, "fail_fast", fail_fast)
         pipeline.rpush(key_queue_unprocessed, jobs)
         pipeline.set(key_queue_status, STATUS_READY)
@@ -162,8 +173,8 @@ module RSpecQ
       jobs = redis.lrange(key("queue", "jobs_per_worker", worker), 0, -1)
       seed = redis.hget(key("worker_seed"), worker)
 
-      "DISABLE_SPRING=1 DISABLE_BOOTSNAP=1 bin/rspecq --build 1 " \
-        "--worker foo --seed #{seed} --max-requeues 0 --fail-fast 1 " \
+      "DISABLE_SPRING=1 DISABLE_BOOTSNAP=1 bin/rspecq " \
+        "--seed #{seed} --max-requeues 0 --fail-fast 1 " \
         "--reproduction #{jobs.join(' ')}"
     end
 
