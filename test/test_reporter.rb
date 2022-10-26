@@ -32,8 +32,8 @@ class TestReporter < RSpecQTest
 
     assert_match "Flaky jobs detected", output
     assert_match "./spec/foo_spec.rb:2 @ #{worker_id}", output
-    assert_match "DISABLE_SPRING=1 DISABLE_BOOTSNAP=1 bin/rspecq --build 1 " \
-        "--worker foo --seed 1234 --max-requeues 0 --fail-fast 1 --reproduction " \
+    assert_match "DISABLE_SPRING=1 DISABLE_BOOTSNAP=1 bin/rspecq " \
+        "--seed 1234 --max-requeues 0 --fail-fast 1 --reproduction " \
         "./spec/foo_spec.rb ./spec/foo_spec.rb[1:1]", output
     refute_match "Failed examples", output
   end
