@@ -171,11 +171,14 @@ module RSpecQ
     def job_rerun_command(job)
       worker = failed_job_worker(job)
       jobs = redis.lrange(key("queue", "jobs_per_worker", worker), 0, -1)
+      # Get the job index or (||) the file index incase we queued the entire file
+      # or get all the worker jobs incase something has gone VERY wrong
+      job_index = jobs.find_index(job) || jobs.find_index(job.split('[')[0]) || -1
       seed = redis.hget(key("worker_seed"), worker)
 
       "DISABLE_SPRING=1 DISABLE_BOOTSNAP=1 bin/rspecq " \
         "--seed #{seed} --max-requeues 0 --fail-fast 1 " \
-        "--reproduction #{jobs.join(' ')}"
+        "--reproduction #{jobs[0..job_index].join(' ')}"
     end
 
     def record_example_failure(example_id, message)
