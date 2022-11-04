@@ -77,11 +77,17 @@ module RSpecQ
       @seed = srand && srand % 0xFFFF
       @tags = []
       @reproduction = false
+      @shutdown = false
 
       RSpec::Core::Formatters.register(Formatters::JobTimingRecorder, :dump_summary)
       RSpec::Core::Formatters.register(Formatters::ExampleCountRecorder, :dump_summary)
       RSpec::Core::Formatters.register(Formatters::FailureRecorder, :example_failed, :message)
       RSpec::Core::Formatters.register(Formatters::WorkerHeartbeatRecorder, :example_finished)
+
+      Signal.trap("TERM") do
+        puts "\nReceived SIGTERM! Exiting gracefully!\n"
+        @shutdown = true
+      end
     end
 
     def work
@@ -97,6 +103,7 @@ module RSpecQ
         update_heartbeat
 
         return if queue.build_failed_fast?
+        return if @shutdown
 
         lost = queue.requeue_lost_job
         puts "Requeued lost job: #{lost}" if lost
