@@ -32,6 +32,7 @@ module RSpecQ
       local worker_heartbeats = KEYS[1]
       local queue_running = KEYS[2]
       local queue_unprocessed = KEYS[3]
+      local queue_lost = KEYS[4]
       local time_now = ARGV[1]
       local timeout = ARGV[2]
 
@@ -41,6 +42,7 @@ module RSpecQ
         if job then
           redis.call('lpush', queue_unprocessed, job)
           redis.call('hdel', queue_running, worker)
+          redis.call('zincrby', queue_lost, 1, job)
           return job
         end
       end
@@ -114,7 +116,8 @@ module RSpecQ
         keys: [
           key_worker_heartbeats,
           key_queue_running,
-          key_queue_unprocessed
+          key_queue_unprocessed,
+          key_queue_lost
         ],
         argv: [
           current_time,
@@ -360,6 +363,11 @@ module RSpecQ
     # redis: SET<job>
     def key_queue_processed
       key("queue", "processed")
+    end
+
+    # redis: ZSET<job>
+    def key_queue_lost
+      key("queue", "lost")
     end
 
     # Contains regular RSpec example failures.
