@@ -83,11 +83,6 @@ module RSpecQ
       RSpec::Core::Formatters.register(Formatters::ExampleCountRecorder, :dump_summary)
       RSpec::Core::Formatters.register(Formatters::FailureRecorder, :example_failed, :message)
       RSpec::Core::Formatters.register(Formatters::WorkerHeartbeatRecorder, :example_finished)
-
-      Signal.trap("TERM") do
-        puts "\nReceived SIGTERM! Exiting gracefully!\n"
-        @shutdown = true
-      end
     end
 
     def work
@@ -97,49 +92,55 @@ module RSpecQ
       queue.wait_until_published(queue_wait_timeout)
       queue.save_worker_seed(@worker_id, seed)
 
-      loop do
-        # we have to bootstrap this so that it can be used in the first call
-        # to `requeue_lost_job` inside the work loop
-        update_heartbeat
+      begin
+        loop do
+          # we have to bootstrap this so that it can be used in the first call
+          # to `requeue_lost_job` inside the work loop
+          update_heartbeat
 
-        return if queue.build_failed_fast?
-        return if @shutdown
+          return if queue.build_failed_fast?
+          return if @shutdown
 
-        lost = queue.requeue_lost_job
-        puts "Requeued lost job: #{lost}" if lost
+          lost = queue.requeue_lost_job
+          puts "Requeued lost job: #{lost}" if lost
 
-        # TODO: can we make `reserve_job` also act like exhausted? and get
-        # rid of `exhausted?` (i.e. return false if no jobs remain)
-        job = queue.reserve_job
+          # TODO: can we make `reserve_job` also act like exhausted? and get
+          # rid of `exhausted?` (i.e. return false if no jobs remain)
+          job = queue.reserve_job
 
-        # build is finished
-        return if job.nil? && queue.exhausted?
+          # build is finished
+          return if job.nil? && queue.exhausted?
 
-        next if job.nil?
+          next if job.nil?
 
-        puts
-        puts "Executing #{job}"
+          puts
+          puts "Executing #{job}"
 
-        reset_rspec_state!
+          reset_rspec_state!
 
-        # reconfigure rspec
-        RSpec.configuration.detail_color = :magenta
-        RSpec.configuration.seed = seed
-        RSpec.configuration.backtrace_formatter.filter_gem("rspecq")
-        RSpec.configuration.add_formatter(Formatters::FailureRecorder.new(queue, job, max_requeues, @worker_id))
-        RSpec.configuration.add_formatter(Formatters::ExampleCountRecorder.new(queue))
-        RSpec.configuration.add_formatter(Formatters::WorkerHeartbeatRecorder.new(self))
+          # reconfigure rspec
+          RSpec.configuration.detail_color = :magenta
+          RSpec.configuration.seed = seed
+          RSpec.configuration.backtrace_formatter.filter_gem("rspecq")
+          RSpec.configuration.add_formatter(Formatters::FailureRecorder.new(queue, job, max_requeues, @worker_id))
+          RSpec.configuration.add_formatter(Formatters::ExampleCountRecorder.new(queue))
+          RSpec.configuration.add_formatter(Formatters::WorkerHeartbeatRecorder.new(self))
 
-        if populate_timings
-          RSpec.configuration.add_formatter(Formatters::JobTimingRecorder.new(queue, job))
+          if populate_timings
+            RSpec.configuration.add_formatter(Formatters::JobTimingRecorder.new(queue, job))
+          end
+
+          options = ["--format", "progress", job]
+          tags.each { |tag| options.push(*["--tag", tag]) }
+          opts = RSpec::Core::ConfigurationOptions.new(options)
+          _result = RSpec::Core::Runner.new(opts).run($stderr, $stdout)
+
+          queue.acknowledge_job(job)
         end
-        
-        options = ["--format", "progress", job]
-        tags.each { |tag| options.push(*["--tag", tag]) }
-        opts = RSpec::Core::ConfigurationOptions.new(options)
-        _result = RSpec::Core::Runner.new(opts).run($stderr, $stdout)
-
-        queue.acknowledge_job(job)
+      rescue SignalException => e
+        puts "\nReceived #{e}! Exiting in a hurry!\n"
+        queue.remove_worker(@worker_id)
+        puts "\nCleaned -up! Exiting now!\n"
       end
     end
 
