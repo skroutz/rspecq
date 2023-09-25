@@ -18,7 +18,7 @@ Gem::Specification.new do |s|
     s.add_dependency "rspec-core"
   end
 
-  s.add_dependency "redis"
+  s.add_dependency "redis", ">= 4.0", "< 6.0"
   s.add_dependency "sentry-ruby"
   s.add_dependency "rspec_junit_formatter"
 

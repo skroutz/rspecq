@@ -97,10 +97,10 @@ module RSpecQ
 
     # NOTE: jobs will be processed from head to tail (lpop)
     def publish(jobs, fail_fast = 0)
-      @redis.multi do
-        @redis.hset(key_queue_config, "fail_fast", fail_fast)
-        @redis.rpush(key_queue_unprocessed, jobs)
-        @redis.set(key_queue_status, STATUS_READY)
+      @redis.multi do |pipeline|
+        pipeline.hset(key_queue_config, "fail_fast", fail_fast)
+        pipeline.rpush(key_queue_unprocessed, jobs)
+        pipeline.set(key_queue_status, STATUS_READY)
       end.first
     end
 
@@ -133,10 +133,10 @@ module RSpecQ
     # NOTE: The same job might happen to be acknowledged more than once, in
     # the case of requeues.
     def acknowledge_job(job)
-      @redis.multi do
-        @redis.hdel(key_queue_running, @worker_id)
-        @redis.sadd(key_queue_processed, job)
-        @redis.rpush(key("queue", "jobs_per_worker", @worker_id), job)
+      @redis.multi do |pipeline|
+        pipeline.hdel(key_queue_running, @worker_id)
+        pipeline.sadd(key_queue_processed, job)
+        pipeline.rpush(key("queue", "jobs_per_worker", @worker_id), job)
       end
     end
 
@@ -207,10 +207,10 @@ module RSpecQ
     end
 
     def record_build_time(duration)
-      @redis.multi do
-        @redis.lpush(key_build_times, Float(duration))
-        @redis.ltrim(key_build_times, 0, 99)
-        @redis.set(key_build_time, Integer(duration * 1000))
+      @redis.multi do |pipeline|
+        pipeline.lpush(key_build_times, Float(duration))
+        pipeline.ltrim(key_build_times, 0, 99)
+        pipeline.set(key_build_time, Integer(duration * 1000))
       end
     end
 
@@ -259,10 +259,10 @@ module RSpecQ
     def exhausted?
       return false if !published?
 
-      @redis.multi do
-        @redis.llen(key_queue_unprocessed)
-        @redis.hlen(key_queue_running)
-      end.inject(:+).zero?
+      @redis.multi do |pipeline|
+        pipeline.llen(key_queue_unprocessed)
+        pipeline.hlen(key_queue_running)
+      end.sum.zero?
     end
 
     def published?
@@ -320,10 +320,10 @@ module RSpecQ
         return false
       end
 
-      @redis.multi do
-        @redis.hlen(key_failures)
-        @redis.hlen(key_errors)
-      end.inject(:+) >= fail_fast
+      @redis.multi do |pipeline|
+        pipeline.hlen(key_failures)
+        pipeline.hlen(key_errors)
+      end.sum >= fail_fast
     end
 
     # redis: STRING [STATUS_INITIALIZING, STATUS_READY]
