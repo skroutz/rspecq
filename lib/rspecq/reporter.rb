@@ -127,6 +127,7 @@ module RSpecQ
       if !flaky_jobs.empty?
         summary << "\n\n"
         summary << "Flaky jobs detected (count=#{flaky_jobs.count}):\n"
+        summary << "::group::Flaky tests details\n"
         flaky_jobs.each do |j|
           summary << RSpec::Core::Formatters::ConsoleCodes.wrap(
             "#{@queue.job_location(j)} @ #{@queue.failed_job_worker(j)}\n",
@@ -137,6 +138,7 @@ module RSpecQ
 
           summary << "#{@queue.job_rerun_command(j)}\n\n\n"
         end
+        summary << "::endgroup::\n"
       end
 
       summary
