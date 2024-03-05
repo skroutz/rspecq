@@ -111,13 +111,13 @@ module RSpecQ
         key_worker_heartbeats, key_queue_lost
       ]
 
-      @redis.multi do
+      @redis.multi do |transaction|
         cleanup_keys.each do |key|
-          @redis.del(key)
+          transaction.del(key)
         end
-        @redis.hset(key_queue_config, "fail_fast", fail_fast)
-        @redis.rpush(key_queue_unprocessed, jobs)
-        @redis.set(key_queue_status, STATUS_READY)
+        transaction.hset(key_queue_config, "fail_fast", fail_fast)
+        transaction.rpush(key_queue_unprocessed, jobs)
+        transaction.set(key_queue_status, STATUS_READY)
       end.first
     end
 
@@ -151,10 +151,10 @@ module RSpecQ
     # NOTE: The same job might happen to be acknowledged more than once, in
     # the case of requeues.
     def acknowledge_job(job)
-      @redis.multi do
-        @redis.hdel(key_queue_running, @worker_id)
-        @redis.sadd(key_queue_processed, job)
-        @redis.rpush(key("queue", "jobs_per_worker", @worker_id), job)
+      @redis.multi do |transaction|
+        transaction.hdel(key_queue_running, @worker_id)
+        transaction.sadd(key_queue_processed, job)
+        transaction.rpush(key("queue", "jobs_per_worker", @worker_id), job)
       end
     end
 
@@ -227,9 +227,9 @@ module RSpecQ
     end
 
     def record_build_time(duration)
-      @redis.multi do
-        @redis.lpush(key_build_times, Float(duration))
-        @redis.ltrim(key_build_times, 0, 99)
+      @redis.multi do |transaction|
+        transaction.lpush(key_build_times, Float(duration))
+        transaction.ltrim(key_build_times, 0, 99)
       end
     end
 
@@ -282,9 +282,9 @@ module RSpecQ
     def exhausted?
       return false if !published?
 
-      @redis.multi do
-        @redis.llen(key_queue_unprocessed)
-        @redis.hlen(key_queue_running)
+      @redis.multi do |transaction|
+        transaction.llen(key_queue_unprocessed)
+        transaction.hlen(key_queue_running)
       end.inject(:+).zero?
     end
 
@@ -343,9 +343,9 @@ module RSpecQ
         return false
       end
 
-      @redis.multi do
-        @redis.hlen(key_failures)
-        @redis.hlen(key_errors)
+      @redis.multi do |transaction|
+        transaction.hlen(key_failures)
+        transaction.hlen(key_errors)
       end.inject(:+) >= fail_fast
     end
 
