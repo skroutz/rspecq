@@ -6,9 +6,30 @@ module RSpecQ
   # queue. The RSpecQ::Parser will mutate args, removing any rspecq
   # args so that RSpec::Core::Parser only sees the args intended
   # for rspec.
-  class Configuration < OpenStruct
+  Configuration = Struct.new(
+    :build,
+    :exclude_pattern,
+    :fail_fast,
+    :files_or_dirs_to_run,
+    :file_split_threshold,
+    :include_pattern,
+    :junit_output,
+    :max_requeues,
+    :queue_wait_timeout,
+    :redis_host,
+    :redis_url,
+    :redis_opts,
+    :report,
+    :report_timeout,
+    :reproduction,
+    :rspec_args,
+    :seed,
+    :timings,
+    :worker,
+    keyword_init: true
+  ) do
     def initialize(args)
-      super RSpecQ::Parser.parse!(args)
+      super(**RSpecQ::Parser.parse!(args))
 
       self.files_or_dirs_to_run = RSpec::Core::Parser.new(args).parse[:files_or_directories_to_run]
       l = files_or_dirs_to_run.length
