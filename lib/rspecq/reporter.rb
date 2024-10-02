@@ -81,7 +81,7 @@ module RSpecQ
       puts summary(@queue.example_failures, @queue.non_example_errors,
         flaky_jobs, humanize_duration(tests_duration))
 
-      flaky_jobs_to_sentry(flaky_jobs, tests_duration, @queue.flaky_failures)
+      flaky_jobs_to_sentry(tests_duration, @queue.flaky_failures)
 
       exit 1 if !@queue.build_successful?
     end
@@ -152,11 +152,15 @@ module RSpecQ
       Time.at(seconds).utc.strftime("%H:%M:%S")
     end
 
-    def flaky_jobs_to_sentry(jobs, build_duration, failures)
-      return if jobs.empty?
+    def flaky_jobs_to_sentry(build_duration, failures)
+      return if failures.empty?
 
-      jobs.each do |job|
+      failures.each do |job, msg|
         filename = job.sub(/\[.+\]/, "")[%r{spec/.+}].split(":")[0]
+        spec_name = msg.split("\n")[1].strip
+        # Use this digest in order to make the Sentry event name unique per spec
+        sha = Digest::SHA1.hexdigest(filename + spec_name)
+        event_message = "#{filename} #{sha}"
 
         extra = {
           build: @build_id,
@@ -170,11 +174,12 @@ module RSpecQ
 
         tags = {
           flaky: true,
-          spec_file: filename
+          spec_file: filename,
+          spec_sha: sha
         }
 
         Sentry.capture_message(
-          "Flaky test in #{filename}",
+          event_message,
           level: "warning",
           extra: extra,
           tags: tags
