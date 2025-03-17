@@ -37,7 +37,7 @@ jobs:
           - 6379:6379
 
     steps:
-      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
 
       - uses: ruby/setup-ruby@922ebc4c5262cd14e07bb0e1db020984b6c064fe # v1
         env:
