@@ -145,9 +145,10 @@ module RSpecQ
     end
 
     def try_publish_queue!(queue)
-      return if !queue.become_master
-
       if reproduction
+        # We assume that if we are trying to reproduce, only one
+        # worker will run and that one will be the master.
+        # Thus we forcibly publish (override) a new queue.
         q_size = queue.publish(files_or_dirs_to_run, fail_fast)
         log_event(
           "Reproduction mode. Published queue as given (size=#{q_size})",
@@ -155,6 +156,9 @@ module RSpecQ
         )
         return
       end
+
+      return if !queue.become_master
+
       RSpec.configuration.files_or_directories_to_run = files_or_dirs_to_run
       files_to_run = RSpec.configuration.files_to_run.map { |j| relative_path(j) }
 
