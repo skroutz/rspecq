@@ -34,6 +34,11 @@ module RSpecQ
     # Defaults to 999999
     attr_accessor :file_split_threshold
 
+    # If set, all spec files are split and scheduled on a per-example basis.
+    #
+    # Defaults to false
+    attr_accessor :split_files
+
     # Retry failed examples up to N times (with N being the supplied value)
     # before considering them legit failures
     #
@@ -172,7 +177,9 @@ module RSpecQ
       jobs = []
       slow_files = []
 
-      if file_split_threshold
+      if split_files
+        slow_files = files_to_run
+      elsif file_split_threshold
         slow_files = timings.take_while do |_job, duration|
           duration >= file_split_threshold
         end.map(&:first) & files_to_run
