@@ -26,10 +26,14 @@ module RSpecQ
     :seed,
     :timings,
     :worker,
+    :worker_liveness_sec,
     keyword_init: true
   ) do
     def initialize(args)
       super(**RSpecQ::Parser.parse!(args))
+
+      # Set constant RspecQ WORKER_LIVENESS_SEC after parsing options
+      ::RSpecQ.const_set(:WORKER_LIVENESS_SEC, self.worker_liveness_sec)
 
       self.files_or_dirs_to_run = RSpec::Core::Parser.new(args).parse[:files_or_directories_to_run]
       l = files_or_dirs_to_run.length
@@ -40,15 +44,15 @@ module RSpecQ
         self.rspec_args = args[0...-l]
       end
 
-      if self.include_pattern || self.exclude_pattern
-        self.files_or_dirs_to_run = filter_tests(self.files_or_dirs_to_run, self)
+      if include_pattern || exclude_pattern
+        self.files_or_dirs_to_run = filter_tests(files_or_dirs_to_run, self)
       end
 
-      if redis_url
-        self.redis_opts = { url: redis_url }
-      else
-        self.redis_opts = { host: redis_host }
-      end
+      self.redis_opts = if redis_url
+                          { url: redis_url }
+                        else
+                          { host: redis_host }
+                        end
     end
 
     def report?

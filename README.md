@@ -178,7 +178,7 @@ MRI etc.
 For resiliency against such issues, workers emit a heartbeat after each
 example they execute, to signal
 that they're healthy and performing jobs as expected. If a worker hasn't
-emitted a heartbeat for a given amount of time (set by `WORKER_LIVENESS_SEC`)
+emitted a heartbeat for a given amount of time (set by the `worker_liveness_sec` option)
 it is considered dead and its reserved job will be put back to the queue, to
 be picked up by another healthy worker.
 
