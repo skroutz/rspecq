@@ -135,8 +135,6 @@ class TestEndToEnd < RSpecQTest
 
     assert_includes [2, 3], queue.processed_jobs.length
   end
-<<<<<<< HEAD
-=======
 
   def test_suite_with_rspec_arguments
     queue = exec_build("tagged_suite", "-- --tag foo")
@@ -159,5 +157,4 @@ class TestEndToEnd < RSpecQTest
     assert File.exist?("test/sample_suites/flakey_suite/test/test_results/test.1.xml")
     assert File.exist?("test/sample_suites/flakey_suite/test/test_results/test.2.xml")
   end
->>>>>>> 74202f3... Add ability to define formatter file name and path.
 end
