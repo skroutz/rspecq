@@ -32,9 +32,6 @@ module RSpecQ
     def initialize(args)
       super(**RSpecQ::Parser.parse!(args))
 
-      # Set constant RspecQ WORKER_LIVENESS_SEC after parsing options
-      ::RSpecQ.const_set(:WORKER_LIVENESS_SEC, self.worker_liveness_sec)
-
       self.files_or_dirs_to_run = RSpec::Core::Parser.new(args).parse[:files_or_directories_to_run]
       l = files_or_dirs_to_run.length
       if l.zero?

@@ -89,10 +89,11 @@ module RSpecQ
 
     attr_reader :redis
 
-    def initialize(build_id, worker_id, redis_opts)
+    def initialize(build_id, worker_id, redis_opts, worker_liveness_sec)
       @build_id = build_id
       @worker_id = worker_id
       @redis = Redis.new(redis_opts.merge(id: worker_id))
+      @worker_liveness_sec = worker_liveness_sec
     end
 
     # NOTE: jobs will be processed from head to tail (lpop)
@@ -125,7 +126,7 @@ module RSpecQ
         ],
         argv: [
           current_time,
-          WORKER_LIVENESS_SEC
+          @worker_liveness_sec
         ]
       )
     end

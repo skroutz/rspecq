@@ -1,10 +1,6 @@
 require "rspec/core"
 require "sentry-ruby"
 
-module RSpecQ
-  # See configuration and parser for the worker_liveness_sec option.
-end
-
 require_relative "rspecq/formatters/example_count_recorder"
 require_relative "rspecq/formatters/failure_recorder"
 require_relative "rspecq/formatters/job_timing_recorder"

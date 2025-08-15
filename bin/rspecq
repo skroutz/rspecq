@@ -10,7 +10,8 @@ if config.report?
     build_id: config.build,
     timeout: config.report_timeout,
     redis_opts: config.redis_opts,
-    queue_wait_timeout: config.queue_wait_timeout
+    queue_wait_timeout: config.queue_wait_timeout,
+    worker_liveness_sec: config.worker_liveness_sec
   )
 
   reporter.report
@@ -18,7 +19,8 @@ else
   worker = RSpecQ::Worker.new(
     build_id: config.build,
     worker_id: config.worker,
-    redis_opts: config.redis_opts
+    redis_opts: config.redis_opts,
+    worker_liveness_sec: config.worker_liveness_sec
   )
 
   worker.files_or_dirs_to_run = config.files_or_dirs_to_run if config.files_or_dirs_to_run
