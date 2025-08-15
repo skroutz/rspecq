@@ -22,7 +22,7 @@ class TestConcurrentWorkers < RSpecQTest
 
     assert_operator elapsed, :<, 5
 
-    queue = RSpecQ::Queue.new(build_id, "foo", REDIS_OPTS)
+    queue = RSpecQ::Queue.new(build_id, "foo", REDIS_OPTS, 60)
 
     assert_queue_well_formed(queue)
     assert queue.build_successful?

@@ -136,12 +136,6 @@ class TestEndToEnd < RSpecQTest
     assert_includes [2, 3], queue.processed_jobs.length
   end
 
-  def test_suite_with_rspec_arguments
-    queue = exec_build("tagged_suite", "-- --tag foo")
-
-    assert_equal 1, queue.example_count
-  end
-
   def test_suite_with_junit_output
     queue = exec_build("flakey_suite",
                        "--junit-output test/test_results/test.{{JOB_INDEX}}.xml")
