@@ -14,7 +14,8 @@ module TestHelpers
     w = RSpecQ::Worker.new(
       build_id: rand_id,
       worker_id: rand_id,
-      redis_opts: REDIS_OPTS
+      redis_opts: REDIS_OPTS,
+      worker_liveness_sec: 60
     )
     w.files_or_dirs_to_run = suite_path(path)
     w
@@ -38,7 +39,7 @@ module TestHelpers
 
     assert_equal 0, $?.exitstatus
 
-    queue = RSpecQ::Queue.new(build_id, worker_id, REDIS_OPTS)
+    queue = RSpecQ::Queue.new(build_id, worker_id, REDIS_OPTS, 60)
     assert_queue_well_formed(queue)
 
     queue

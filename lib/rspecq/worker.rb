@@ -16,8 +16,6 @@ module RSpecQ
   #
   # Workers are readers+writers of the queue.
   class Worker
-    HEARTBEAT_FREQUENCY = WORKER_LIVENESS_SEC / 6
-
     # The root path or individual spec files to execute.
     #
     # Defaults to "spec" (similar to RSpec)
@@ -75,10 +73,12 @@ module RSpecQ
 
     attr_reader :queue
 
-    def initialize(build_id:, worker_id:, redis_opts:)
+    def initialize(build_id:, worker_id:, redis_opts:, worker_liveness_sec:)
       @build_id = build_id
       @worker_id = worker_id
-      @queue = Queue.new(build_id, worker_id, redis_opts)
+      @worker_liveness_sec = worker_liveness_sec
+      @heartbeat_frequency = worker_liveness_sec / 6
+      @queue = Queue.new(build_id, worker_id, redis_opts, worker_liveness_sec)
       @fail_fast = 0
       @files_or_dirs_to_run = ["spec"]
       @populate_timings = false
@@ -86,7 +86,7 @@ module RSpecQ
       @heartbeat_updated_at = nil
       @max_requeues = 3
       @queue_wait_timeout = 30
-      @seed = srand && srand % 0xFFFF
+      @seed = srand && (srand % 0xFFFF)
       @reproduction = false
       @junit_output = nil
 
@@ -163,7 +163,7 @@ module RSpecQ
 
     # Update the worker heartbeat if necessary
     def update_heartbeat
-      if @heartbeat_updated_at.nil? || elapsed(@heartbeat_updated_at) >= HEARTBEAT_FREQUENCY
+      if @heartbeat_updated_at.nil? || elapsed(@heartbeat_updated_at) >= @heartbeat_frequency
         queue.record_worker_heartbeat
         @heartbeat_updated_at = Process.clock_gettime(Process::CLOCK_MONOTONIC)
       end
