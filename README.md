@@ -75,6 +75,7 @@ OPTIONS:
         --report-timeout N           Fail if build is not finished after N seconds. Only applicable if --report is enabled (default: 3600).
         --max-requeues N             Retry failed examples up to N times before considering them legit failures (default: 3).
         --queue-wait-timeout N       Time to wait for a queue to be ready before considering it failed (default: 30).
+        --worker_liveness_sec N      Worker liveness timeout in seconds, node will be considered dead if it hasn't emitted a heartbeat for N seconds (default: 60).
         --fail-fast N                Abort build with a non-zero status code after N failed examples.
         --reproduction               Enable reproduction mode: Publish files and examples in the exact order given in the command. Incompatible with --timings.
     -h, --help                       Show this message.
@@ -102,6 +103,7 @@ $ RSPECQ_BUILD=123 RSPECQ_WORKDER=foo1 rspecq spec/
 | `RSPECQ_MAX_REQUEUES` | Max requests |
 | `RSPECQ_QUEUE_WAIT_TIMEOUT` | Queue wait timeout |
 | `RSPECQ_REDIS_URL` | Redis URL |
+| `RSPECQ_WORKER_LIVENESS_SEC` | Worker liveness timeout in seconds |
 | `RSPECQ_FAIL_FAST` | Fail fast |
 | `RSPECQ_REPORTER_RERUN_COMMAND_SKIP` | Do not report flaky test's rerun command |
 
