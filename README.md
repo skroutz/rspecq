@@ -75,7 +75,7 @@ OPTIONS:
         --report-timeout N           Fail if build is not finished after N seconds. Only applicable if --report is enabled (default: 3600).
         --max-requeues N             Retry failed examples up to N times before considering them legit failures (default: 3).
         --queue-wait-timeout N       Time to wait for a queue to be ready before considering it failed (default: 30).
-        --worker_liveness_sec N      Worker liveness timeout in seconds, node will be considered dead if it hasn't emitted a heartbeat for N seconds (default: 60).
+        --worker-liveness-sec N      Worker liveness timeout in seconds, node will be considered dead if it hasn't emitted a heartbeat for N seconds (default: 60).
         --fail-fast N                Abort build with a non-zero status code after N failed examples.
         --reproduction               Enable reproduction mode: Publish files and examples in the exact order given in the command. Incompatible with --timings.
     -h, --help                       Show this message.
