@@ -165,8 +165,12 @@ module RSpecQ
         return
       end
 
-      return if !queue.become_master
+      i_am_master, _master_worker_id = queue.become_master
+      return if !i_am_master
 
+      queue.mark_as_initializing
+
+      # We are the master, we need to publish the queue
       RSpec.configuration.files_or_directories_to_run = files_or_dirs_to_run
       files_to_run = RSpec.configuration.files_to_run.map { |j| relative_path(j) }
 

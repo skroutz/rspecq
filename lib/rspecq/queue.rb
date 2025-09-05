@@ -257,7 +257,22 @@ module RSpecQ
       @redis.hgetall(key_requeues)
     end
 
+    # Attempts to make this worker the master. Returns a two element array:
+    # [true, worker_id] if this worker is now the master or
+    # [false, master_worker_id] if another worker is already the master.
     def become_master
+      i_am_master = @redis.setnx(key_queue_master, @worker_id)
+
+      return [true, @worker_id] if i_am_master
+
+      [false, master]
+    end
+
+    def master
+      @redis.get(key_queue_master)
+    end
+
+    def mark_as_initializing
       @redis.setnx(key_queue_status, STATUS_INITIALIZING)
     end
 
@@ -352,6 +367,10 @@ module RSpecQ
     # redis: STRING [STATUS_INITIALIZING, STATUS_READY]
     def key_queue_status
       key("queue", "status")
+    end
+
+    def key_queue_master
+      key("queue", "master")
     end
 
     # redis:  HASH<config_key => config_value>

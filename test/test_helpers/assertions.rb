@@ -6,6 +6,8 @@ module TestHelpers
         queue.send(:key_worker_heartbeats), 0, -1, withscores: true
       )
 
+      refute_nil queue.master
+      refute_same "", queue.master
       assert queue.published?
       assert(queue.build_failed_fast? || queue.exhausted?)
       assert_operator heartbeats.size, :>=, 0
