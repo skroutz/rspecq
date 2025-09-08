@@ -20,8 +20,26 @@ module RSpecQ
       $stdout.sync = true
     end
 
+    def wait_until_published
+      master = nil
+
+      puts "Waiting until the queue is published..."
+      @queue.wait_until_published(@queue_wait_timeout) do
+        # This block is called during checking if the queue is published.
+        next if master.nil? || master.empty? # Printing master info only once
+
+        master = @queue.master
+        puts "Build master is worker #{master}"
+      end
+
+      puts "Queue published by worker #{master}"
+    rescue RuntimeError => e
+      puts "Error waiting for queue to be published: #{e.message}"
+      raise e
+    end
+
     def report
-      @queue.wait_until_published(@queue_wait_timeout)
+      wait_until_published
 
       finished = false
 

@@ -1,6 +1,26 @@
 require "test_helpers"
 
 class TestReporter < RSpecQTest
+  def test_wait_until_published_block_for_master_reporting
+    worker = new_worker("") # empty path
+
+    worker.queue.become_master
+
+    reporter = RSpecQ::Reporter.new(
+      build_id: worker.build_id,
+      timeout: 1,
+      queue_wait_timeout: 1,
+      redis_opts: TestHelpers::REDIS_OPTS
+    )
+
+    # Assert runtime error for a specific error string
+    error = assert_raises(RuntimeError) do
+      reporter.wait_until_published
+    end
+
+    assert_match "Queue not yet published after 1 seconds", error.message
+  end
+
   def test_passing_suite
     build_id = rand_id
     exec_build("passing_suite", "", build_id: build_id)

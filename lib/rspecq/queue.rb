@@ -311,6 +311,8 @@ module RSpecQ
       (timeout * 10).times do
         return if published?
 
+        yield if block_given?
+
         sleep 0.1
       end
 
