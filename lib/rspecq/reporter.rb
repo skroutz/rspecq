@@ -141,6 +141,16 @@ module RSpecQ
         summary << "::endgroup::\n"
       end
 
+      working_times = @queue.working_times
+      if working_times.any?
+        summary << "\n\n"
+        summary << "::group::Worker working times (#{working_times.count} workers)\n"
+        working_times.each do |worker, times|
+          summary << "  #{worker}: #{times.join(', ')}\n"
+        end
+        summary << "::endgroup::\n"
+      end
+
       summary
     end
 

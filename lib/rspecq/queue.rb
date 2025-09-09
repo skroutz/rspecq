@@ -164,6 +164,18 @@ module RSpecQ
       @redis.lpush(key("worker_working_times"), value)
     end
 
+    def working_times
+      all_times = @redis.lrange(key("worker_working_times"), 0, -1)
+
+      all_times.map { |t| t.split(":") }.group_by { |w, _| w }.transform_values do |vs|
+        # convert to <min>:<sec> format
+        vs.map(&:last).map do |v|
+          min, secs = v.to_i.divmod(60)
+          "#{min}:#{secs.to_s.rjust(2, '0')}"
+        end
+      end
+    end
+
     def job_location(job)
       @redis.hget(key("job_location"), job)
     end

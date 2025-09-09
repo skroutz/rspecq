@@ -12,6 +12,9 @@ class TestReporter < RSpecQTest
     assert_match "execution time", output
     refute_match "Failed examples", output
     refute_match "Flaky", output
+
+    assert_match "::group::Worker working times", output
+    assert_match(/[a-f0-9]+: \d+:\d\d$/, output)
   end
 
   def test_failing_suite
