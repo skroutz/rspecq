@@ -188,6 +188,12 @@ module RSpecQ
       @redis.hset(key("worker_seed"), worker, seed)
     end
 
+    def log_working_time(working_time)
+      value = "#{@worker_id}:#{working_time}"
+
+      @redis.lpush(key("worker_working_times"), value)
+    end
+
     def job_location(job)
       @redis.hget(key("job_location"), job)
     end
@@ -460,16 +466,16 @@ module RSpecQ
       "build_times"
     end
 
-    private
-
-    def key(*keys)
-      [@build_id, keys].join(":")
-    end
-
     # We don't use any Ruby `Time` methods because specs that use timecop in
     # before(:all) hooks will mess up our times.
     def current_time
       @redis.time[0]
+    end
+
+    private
+
+    def key(*keys)
+      [@build_id, keys].join(":")
     end
   end
 end
