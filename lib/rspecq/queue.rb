@@ -158,6 +158,12 @@ module RSpecQ
       @redis.hset(key("worker_seed"), worker, seed)
     end
 
+    def log_working_time(working_time)
+      value = "#{@worker_id}:#{working_time}"
+
+      @redis.lpush(key("worker_working_times"), value)
+    end
+
     def job_location(job)
       @redis.hget(key("job_location"), job)
     end
@@ -434,6 +440,13 @@ module RSpecQ
       "build_times"
     end
 
+    # We don't use any Ruby `Time` methods because specs that use timecop in
+    # before(:all) hooks will mess up our times.
+    def current_time
+      @redis.time[0]
+    end
+
+
     private
 
     def eval_script(script, keys: [], argv: [])
@@ -451,12 +464,6 @@ module RSpecQ
       [@build_id, keys].join(":")
     end
 
-    # We don't use any Ruby `Time` methods because specs that use timecop in
-    # before(:all) hooks will mess up our times.
-    def current_time
-      @redis.time[0]
-    end
-
     # Given a set splitted file timing entries, we reconstruct the file's
     # timings by summing up the timings of its individual parts.
     def populate_splitted_file_timings(timings)
@@ -471,5 +478,6 @@ module RSpecQ
 
       whole_file_timings
     end
+
   end
 end

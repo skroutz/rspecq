@@ -84,6 +84,14 @@ module RSpecQ
       RSpec::Core::Formatters.register(Formatters::WorkerHeartbeatRecorder, :example_finished)
     end
 
+    def set_start_working_time
+      @start_working_time = queue.current_time
+    end
+
+    def working_time
+      @working_time ||= queue.current_time - @start_working_time
+    end
+
     def work
       puts "Working for build #{@build_id} (worker=#{@worker_id})"
 
@@ -92,12 +100,19 @@ module RSpecQ
 
       queue.save_worker_seed(@worker_id, seed)
 
+      start_working_time = set_start_working_time
+      puts "Started working at #{start_working_time}"
       loop do
         # we have to bootstrap this so that it can be used in the first call
         # to `requeue_lost_job` inside the work loop
         update_heartbeat
 
-        return if queue.build_failed_fast?
+        if queue.build_failed_fast? || @shutdown
+          puts "Stopping worker. working time: #{working_time} sec"
+          log_event("Worker stopped!", "info", working_time: working_time)
+          queue.log_working_time(working_time)
+          return
+        end
 
         lost = queue.requeue_lost_job
         puts "Requeued lost job: #{lost}" if lost
@@ -107,7 +122,12 @@ module RSpecQ
         job = queue.reserve_job
 
         # build is finished
-        return if job.nil? && queue.exhausted?
+        if job.nil? && queue.exhausted?
+          puts "Stopping worker as the build is finished. working time: #{working_time} sec"
+          log_event("Worker finished!", "info", working_time: working_time)
+          queue.log_working_time(working_time)
+          return
+        end
 
         next if job.nil?
 
