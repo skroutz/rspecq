@@ -20,10 +20,11 @@ Gem::Specification.new do |s|
 
   s.add_dependency "redis"
   s.add_dependency "sentry-ruby"
+  s.add_dependency "logger" # sentry-ruby dependency in ruby 3.5 (should be fixed upstream)
 
   s.add_development_dependency "minitest"
   s.add_development_dependency "pry-byebug"
   s.add_development_dependency "rake"
   s.add_development_dependency "rspec"
-  s.add_development_dependency "rubocop", "~> 1.26.0"
+  s.add_development_dependency "rubocop", "~> 1.80.2"
 end

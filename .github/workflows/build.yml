@@ -12,23 +12,22 @@ jobs:
     name: "Redis ${{ matrix.redis-version }}, Ruby ${{ matrix.ruby-version }}, RSpec ${{ matrix.rspec-core-version }}"
     strategy:
       matrix:
-        redis-version: [5]
+        redis-version: [6]
 
         ruby-version:
-          - 2.5
+          - 3.4
 
         rspec-core-version:
-          - 3.8.2
-          - 3.9.3
-          - 3.10.1
           - 3.11.0
+          - 3.12.3
+          - 3.13.5
         include:
-          - redis-version: 5
-            ruby-version: 3.1
-            rspec-core-version: 3.11.0
-          - redis-version: 5
-            ruby-version: '3.0'   # Quoted in order to stringify to '3.0', not '3'.
-            rspec-core-version: 3.11.0
+          - redis-version: 6
+            ruby-version: '3.5.0-preview1'
+            rspec-core-version: 3.13.5
+          - redis-version: 6
+            ruby-version: '3.3'   # Quoted in order to stringify to '3.0', not '3'.
+            rspec-core-version: 3.13.5
 
     services:
       redis:
@@ -39,7 +38,7 @@ jobs:
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
 
-      - uses: ruby/setup-ruby@922ebc4c5262cd14e07bb0e1db020984b6c064fe # v1
+      - uses: ruby/setup-ruby@44511735964dcb71245e7e55f72539531f7bc0eb # v1
         env:
           RSPEC_CORE: ${{ matrix.rspec-core-version }}
         with:
