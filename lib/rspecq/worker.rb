@@ -306,7 +306,7 @@ module RSpecQ
     def log_event(msg, level, additional = {})
       puts msg
 
-      Sentry.capture_message(msg, level: level, extra: {
+      Raven.capture_message(msg, level: level, extra: {
         build: @build_id,
         worker: @worker_id,
         queue: queue.inspect,

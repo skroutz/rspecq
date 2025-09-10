@@ -19,8 +19,9 @@ Gem::Specification.new do |s|
   end
 
   s.add_dependency "redis"
-  s.add_dependency "sentry-ruby"
-  s.add_dependency "logger" # sentry-ruby dependency in ruby 3.5 (should be fixed upstream)
+  s.add_dependency "sentry-raven"
+  s.add_dependency "bigdecimal" # sentry-raven dependency in ruby 3.5 (should be fixed upstream)
+  s.add_dependency "base64" # sentry-raven dependency in ruby 3.5 (should be fixed upstream)
 
   s.add_development_dependency "minitest"
   s.add_development_dependency "pry-byebug"
