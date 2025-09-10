@@ -43,6 +43,12 @@ Layout/FirstArrayElementIndentation:
 Layout/ArgumentAlignment:
   Enabled: false
 
+Layout/LineContinuationSpacing:
+  Enabled: false
+
+Layout/LineContinuationLeadingSpace:
+  Enabled: false
+
 Gemspec/RequiredRubyVersion:
   Enabled: false
 
@@ -53,4 +59,7 @@ Layout/LineEndStringConcatenationIndentation:
   Enabled: false
 
 Gemspec/RequireMFA:
+  Enabled: false
+
+Gemspec/DevelopmentDependencies:
   Enabled: false

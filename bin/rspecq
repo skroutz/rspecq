@@ -9,7 +9,7 @@ DEFAULT_QUEUE_WAIT_TIMEOUT = 30
 DEFAULT_FAIL_FAST = 0
 
 def env_set?(var)
-  ["1", "true"].include?(ENV[var])
+  ["1", "true"].include?(ENV.fetch(var, nil))
 end
 
 opts = {
@@ -127,9 +127,9 @@ OptionParser.new do |o|
   end
 end.parse!
 
-opts[:build] ||= ENV["RSPECQ_BUILD"]
-opts[:worker] ||= ENV["RSPECQ_WORKER"]
-opts[:seed] ||= ENV["RSPECQ_SEED"]
+opts[:build] ||= ENV.fetch("RSPECQ_BUILD", nil)
+opts[:worker] ||= ENV.fetch("RSPECQ_WORKER", nil)
+opts[:seed] ||= ENV.fetch("RSPECQ_SEED", nil)
 opts[:redis_host] ||= ENV["RSPECQ_REDIS"] || DEFAULT_REDIS_HOST
 opts[:timings] ||= env_set?("RSPECQ_UPDATE_TIMINGS")
 opts[:file_split_threshold] ||= Integer(ENV["RSPECQ_FILE_SPLIT_THRESHOLD"] || 9_999_999)
@@ -137,7 +137,7 @@ opts[:report] ||= env_set?("RSPECQ_REPORT")
 opts[:report_timeout] ||= Integer(ENV["RSPECQ_REPORT_TIMEOUT"] || DEFAULT_REPORT_TIMEOUT)
 opts[:max_requeues] ||= Integer(ENV["RSPECQ_MAX_REQUEUES"] || DEFAULT_MAX_REQUEUES)
 opts[:queue_wait_timeout] ||= Integer(ENV["RSPECQ_QUEUE_WAIT_TIMEOUT"] || DEFAULT_QUEUE_WAIT_TIMEOUT)
-opts[:redis_url] ||= ENV["RSPECQ_REDIS_URL"]
+opts[:redis_url] ||= ENV.fetch("RSPECQ_REDIS_URL", nil)
 opts[:fail_fast] ||= Integer(ENV["RSPECQ_FAIL_FAST"] || DEFAULT_FAIL_FAST)
 opts[:reproduction] ||= env_set?("RSPECQ_REPRODUCTION")
 

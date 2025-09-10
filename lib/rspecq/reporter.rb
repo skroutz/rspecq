@@ -78,7 +78,7 @@ module RSpecQ
     def summary(failures, errors, flaky_jobs, duration)
       failed_examples_section = "\nFailed examples:\n\n"
 
-      failures.each do |_job, msg|
+      failures.each_value do |msg|
         parts = msg.split("\n")
         failed_examples_section << "  #{parts[-1]}\n"
       end
@@ -93,7 +93,7 @@ module RSpecQ
 
       summary << failed_examples_section if !failures.empty?
 
-      errors.each { |_job, msg| summary << msg }
+      errors.each_value { |msg| summary << msg }
 
       summary << "\n"
       summary << "Total results:\n"
