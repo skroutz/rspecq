@@ -63,3 +63,6 @@ Gemspec/RequireMFA:
 
 Gemspec/DevelopmentDependencies:
   Enabled: false
+
+Gemspec/OrderedDependencies:
+  Enabled: false
