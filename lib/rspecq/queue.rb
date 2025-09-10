@@ -71,6 +71,19 @@ module RSpecQ
       return true
     LUA
 
+    REQUEUEABLE_JOB = <<~LUA.freeze
+      local key_requeues = KEYS[1]
+      local job = ARGV[1]
+      local max_requeues = ARGV[2]
+
+      local requeued_times = redis.call('hget', key_requeues, job)
+      if requeued_times and requeued_times >= max_requeues then
+        return nil
+      end
+      redis.call('hincrby', key_requeues, job, 1)
+      return true
+    LUA
+
     STATUS_INITIALIZING = "initializing".freeze
     STATUS_READY = "ready".freeze
 
@@ -144,6 +157,15 @@ module RSpecQ
         argv: [job, max_requeues, original_worker_id, location]
       )
     end
+
+    def requeueable_job?(job, max_requeues)
+      return false if max_requeues.zero?
+
+      @redis.eval(
+        REQUEUEABLE_JOB,
+        keys: [key_requeues_formatter_stats],
+        argv: [job, max_requeues]
+      )
 
     def save_worker_seed(worker, seed)
       @redis.hset(key("worker_seed"), worker, seed)
@@ -345,6 +367,10 @@ module RSpecQ
     # redis: HASH<job => times_retried>
     def key_requeues
       key("requeues")
+    end
+
+    def key_requeues_formatter_stats
+      key("requeues_formatter_stats")
     end
 
     # The total number of examples, those that were requeued.

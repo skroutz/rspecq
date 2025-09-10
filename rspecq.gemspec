@@ -19,6 +19,7 @@ Gem::Specification.new do |s|
   end
 
   s.add_dependency "redis"
+  s.add_dependency "rspec_junit_formatter"
   s.add_dependency "sentry-ruby"
   s.add_dependency "logger" # sentry-ruby dependency in ruby 3.5 (should be fixed upstream)
 

@@ -103,6 +103,13 @@ OptionParser.new do |o|
     opts[:fail_fast] = v
   end
 
+  o.on("--junit-output filepath", String, "Output junit formatted xml "    \
+       "for CI suites to the defined file path. Substitution parameters "  \
+       "{{TEST_ENV_NUMBER}} - parallel gem proc number. "                  \
+       "{{JOB_INDEX}} - increments with each suite that is run.") do |v|
+    opts[:junit_output] = v
+  end
+
   o.on("--reproduction", "Enable reproduction mode: run rspec on the given files " \
        "and examples in the exact order they are given. Incompatible with " \
        "--timings.") do |v|
@@ -140,6 +147,7 @@ opts[:queue_wait_timeout] ||= Integer(ENV["RSPECQ_QUEUE_WAIT_TIMEOUT"] || DEFAUL
 opts[:redis_url] ||= ENV.fetch("RSPECQ_REDIS_URL", nil)
 opts[:fail_fast] ||= Integer(ENV["RSPECQ_FAIL_FAST"] || DEFAULT_FAIL_FAST)
 opts[:reproduction] ||= env_set?("RSPECQ_REPRODUCTION")
+opts[:junit_output] ||= ENV["RSPECQ_JUNIT_OUTPUT"]
 
 # rubocop:disable Style/RaiseArgs
 raise OptionParser::MissingArgument.new(:build) if opts[:build].nil?
@@ -155,6 +163,19 @@ else
 end
 
 Sentry.init if ENV["SENTRY_DSN"]
+
+# Use the RSpec parser to parse any command line args intended for rspec such
+# as `-- --format JUnit -o foo.xml` so that we can pass these args to rspec
+# while removing the files_or_dirs_to_run since we want to pull those from the
+# queue. OptionParser above mutates ARGV, so only options after `--`  or
+# non-flag arguments (such as files) will make it to this point.
+files_or_dirs_to_run = RSpec::Core::Parser.new(ARGV).parse[:files_or_directories_to_run]
+if files_or_dirs_to_run.length.zero?
+  opts[:rspec_args] = ARGV
+else
+  opts[:rspec_args] = ARGV[0...-files_or_dirs_to_run.length]
+  opts[:files_or_dirs_to_run] = files_or_dirs_to_run
+end
 
 if opts[:report]
   reporter = RSpecQ::Reporter.new(
@@ -172,7 +193,8 @@ else
     redis_opts: redis_opts
   )
 
-  worker.files_or_dirs_to_run = ARGV if ARGV.any?
+  worker.rspec_args = opts[:rspec_args]
+  worker.files_or_dirs_to_run = opts[:files_or_dirs_to_run] if opts[:files_or_dirs_to_run]
   worker.populate_timings = opts[:timings]
   worker.file_split_threshold = opts[:file_split_threshold]
   worker.max_requeues = opts[:max_requeues]
@@ -181,5 +203,6 @@ else
   worker.seed = Integer(opts[:seed]) if opts[:seed]
   worker.reproduction = opts[:reproduction]
   worker.tags = opts[:tags]
+  worker.junit_output = opts[:junit_output]
   worker.work
 end
