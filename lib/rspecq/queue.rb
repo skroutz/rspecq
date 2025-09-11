@@ -83,7 +83,7 @@ module RSpecQ
     end
 
     # NOTE: jobs will be processed from head to tail (lpop)
-    def publish(jobs, fail_fast = 0)
+    def push_jobs(jobs, fail_fast = 0)
       redis.multi do |pipeline|
         pipeline.hset(key_queue_config, "fail_fast", fail_fast)
         pipeline.rpush(key_queue_unprocessed, jobs)
