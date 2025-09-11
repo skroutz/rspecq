@@ -83,11 +83,14 @@ module RSpecQ
     end
 
     # NOTE: jobs will be processed from head to tail (lpop)
-    def push_jobs(jobs, fail_fast = 0)
+    # If publish is false, the queue will not be marked as ready
+    # This is handy if we want to push jobs in multiple batches
+    # to utilize workers as soon as possible
+    def push_jobs(jobs, fail_fast = 0, publish: true)
       redis.multi do |pipeline|
         pipeline.hset(key_queue_config, "fail_fast", fail_fast)
-        pipeline.rpush(key_queue_unprocessed, jobs)
-        pipeline.set(key_queue_status, STATUS_READY)
+        pipeline.rpush(key_queue_unprocessed, jobs) if jobs.any?
+        pipeline.set(key_queue_status, STATUS_READY) if publish
       end
 
       jobs.size

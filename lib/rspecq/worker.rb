@@ -90,7 +90,6 @@ module RSpecQ
       q_size = try_publish_queue!(queue)
       puts "Published queue (size=#{q_size})" if q_size
 
-      queue.wait_until_published(queue_wait_timeout)
       queue.save_worker_seed(@worker_id, seed)
 
       loop do
@@ -171,7 +170,6 @@ module RSpecQ
       end
 
       # prepare jobs to run
-      jobs = []
       slow_files = []
 
       if file_split_threshold
@@ -180,15 +178,21 @@ module RSpecQ
         end.map(&:first) & files_to_run
       end
 
-      if slow_files.any?
-        jobs.concat(files_to_run - slow_files)
-        jobs.concat(files_to_example_ids(slow_files))
-      else
-        jobs.concat(files_to_run)
+      if slow_files.empty?
+        return queue.push_jobs(order_jobs_by_timings(files_to_run), fail_fast)
       end
 
-      jobs = order_jobs_by_timings(jobs)
-      queue.publish(jobs, fail_fast)
+      jobs = order_jobs_by_timings(files_to_run - slow_files)
+      pending = slow_files
+
+      # Push non-slow files first to make sure that workers can start working
+      # TODO we might want push until the default_timing threshold so that we
+      # have a fair scheduling accounting for untimed jobs
+      queue.push_jobs(jobs, fail_fast, publish: false)
+
+      # Populate splitted slow files
+      pending = files_to_example_ids(pending)
+      queue.push_jobs(order_jobs_by_timings(pending), fail_fast)
     end
 
     private

@@ -10,6 +10,10 @@ module TestHelpers
     SecureRandom.hex(4)
   end
 
+  def rspecq_redis
+    Redis.new(REDIS_OPTS)
+  end
+
   def new_worker(path)
     w = RSpecQ::Worker.new(
       build_id: rand_id,
