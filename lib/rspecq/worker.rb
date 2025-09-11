@@ -61,7 +61,7 @@ module RSpecQ
     # given in the command.
     attr_accessor :reproduction
 
-    attr_reader :queue
+    attr_reader :queue, :build_id, :worker_id
 
     def initialize(build_id:, worker_id:, redis_opts:)
       @build_id = build_id
