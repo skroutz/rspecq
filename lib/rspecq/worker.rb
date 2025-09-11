@@ -166,7 +166,7 @@ module RSpecQ
       queue.mark_elected_master_at
 
       if reproduction
-        q_size = queue.publish(files_or_dirs_to_run, fail_fast)
+        q_size = queue.push_jobs(files_or_dirs_to_run, fail_fast)
         log_event(
           "Reproduction mode. Published queue as given (size=#{q_size})",
           "info"
@@ -181,7 +181,7 @@ module RSpecQ
 
       timings = queue.timings
       if timings.empty?
-        q_size = queue.publish(files_to_run.shuffle, fail_fast)
+        q_size = queue.push_jobs(files_to_run.shuffle, fail_fast)
         log_event(
           "No timings found! Published queue in random order (size=#{q_size})",
           "warning"

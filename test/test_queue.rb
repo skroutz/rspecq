@@ -25,9 +25,9 @@ class TestQueue < RSpecQTest
     assert_failures(["./spec/legit_failure_spec.rb[1:3]"], queue)
   end
 
-  def test_publish_returns_jobs_size
+  def test_push_jobs_returns_jobs_size
     queue = RSpecQ::Queue.new(rand_id, rand_id, REDIS_OPTS)
 
-    assert_equal 2, queue.publish(["job1", "job2"])
+    assert_equal 2, queue.push_jobs(["job1", "job2"])
   end
 end
