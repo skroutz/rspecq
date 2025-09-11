@@ -34,6 +34,12 @@ module RSpecQ
     # Defaults to 999999
     attr_accessor :file_split_threshold
 
+    # If set, worker will *only* try to emit up to a certain number of jobs
+    # as soon as possible to increase job fairness.
+    #
+    # Defaults to nil (disabled)
+    attr_accessor :early_push_max_jobs
+
     # Retry failed examples up to N times (with N being the supplied value)
     # before considering them legit failures
     #
@@ -202,15 +208,21 @@ module RSpecQ
       end
 
       jobs = order_jobs_by_timings(files_to_run - slow_files)
-      pending = slow_files
+      pending = []
 
       # Push non-slow files first to make sure that workers can start working
-      # TODO we might want push until the default_timing threshold so that we
-      # have a fair scheduling accounting for untimed jobs
+      if early_push_max_jobs # push jobs up to the threshold
+        rest = jobs
+
+        jobs = rest.shift(early_push_max_jobs)
+        pending = rest
+      end
+
       queue.push_jobs(jobs, fail_fast, publish: false)
 
       # Populate splitted slow files
-      pending = files_to_example_ids(pending)
+      pending += files_to_example_ids(slow_files)
+
       queue.push_jobs(order_jobs_by_timings(pending), fail_fast)
     end
 
