@@ -280,7 +280,17 @@ module RSpecQ
 
     # ordered by execution time desc (slowest are in the head)
     def global_timings
-      @redis.zrevrange(key_timings, 0, -1, withscores: true).to_h
+      redis_timings = @redis.zrevrange(key_timings, 0, -1, withscores: true).to_h
+
+      # Populate timings for whole files that were split into individual
+      # examples, by summing up the timings of their individual parts.
+      #
+      # We need that so that the scheduler will be able to mark them for splitting again
+      whole_file_timings = populate_splitted_file_timings(redis_timings)
+      return redis_timings if whole_file_timings.empty?
+
+      redis_timings.merge!(whole_file_timings)
+      redis_timings.sort_by { |_j, d| -d }.to_h
     end
 
     # ordered by execution time desc (slowest are in the head)
@@ -529,6 +539,21 @@ module RSpecQ
     # before(:all) hooks will mess up our times.
     def current_time
       @redis.time[0]
+    end
+
+    # Given a set splitted file timing entries, we reconstruct the file's
+    # timings by summing up the timings of its individual parts.
+    def populate_splitted_file_timings(timings)
+      whole_file_timings = Hash.new(0)
+
+      timings.each do |file, duration|
+        next if !file.include?("[")
+
+        base_file = file.split("[").first
+        whole_file_timings[base_file] += duration
+      end
+
+      whole_file_timings
     end
   end
 end
