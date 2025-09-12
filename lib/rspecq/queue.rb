@@ -239,8 +239,8 @@ module RSpecQ
 
     # Persist build timings to the global timings key, so that they can be
     # used for scheduling future builds.
-    def update_global_timings
-      @redis.copy(key_build_timings, key_timings, replace: true)
+    def update_global_timings(dst = key_timings)
+      @redis.copy(key_build_timings, dst, replace: true)
     end
 
     def record_build_time(duration)
