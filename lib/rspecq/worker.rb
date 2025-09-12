@@ -23,11 +23,6 @@ module RSpecQ
     # Defaults to "spec" (similar to RSpec)
     attr_accessor :files_or_dirs_to_run
 
-    # If true, job timings will be populated in the global Redis timings key
-    #
-    # Defaults to false
-    attr_accessor :populate_timings
-
     # If set, spec files that are known to take more than this value to finish,
     # will be split and scheduled on a per-example basis.
     #
@@ -76,7 +71,6 @@ module RSpecQ
       @queue = Queue.new(build_id, worker_id, redis_opts)
       @fail_fast = 0
       @files_or_dirs_to_run = "spec"
-      @populate_timings = false
       @file_split_threshold = 999_999
       @heartbeat_updated_at = nil
       @max_requeues = 3
@@ -143,10 +137,7 @@ module RSpecQ
         RSpec.configuration.add_formatter(Formatters::FailureRecorder.new(queue, job, max_requeues, @worker_id))
         RSpec.configuration.add_formatter(Formatters::ExampleCountRecorder.new(queue))
         RSpec.configuration.add_formatter(Formatters::WorkerHeartbeatRecorder.new(self))
-
-        if populate_timings
-          RSpec.configuration.add_formatter(Formatters::JobTimingRecorder.new(queue, job))
-        end
+        RSpec.configuration.add_formatter(Formatters::JobTimingRecorder.new(queue, job))
 
         options = ["--format", "progress", job]
         tags.each { |tag| options.push("--tag", tag) }
@@ -171,7 +162,7 @@ module RSpecQ
     end
 
     def global_timings
-      @global_timings ||= queue.timings
+      @global_timings ||= queue.global_timings
     end
 
     def try_publish_queue!(queue)
@@ -196,7 +187,7 @@ module RSpecQ
       if global_timings.empty?
         q_size = queue.push_jobs(files_to_run.shuffle, fail_fast)
         log_event(
-          "No timings found! Published queue in random order (size=#{q_size})",
+          "No global timings found! Published queue in random order (size=#{q_size})",
           "warning"
         )
         return q_size
@@ -334,7 +325,6 @@ module RSpecQ
         worker: @worker_id,
         queue: queue.inspect,
         files_or_dirs_to_run: files_or_dirs_to_run,
-        populate_timings: populate_timings,
         file_split_threshold: file_split_threshold,
         heartbeat_updated_at: @heartbeat_updated_at,
         object: inspect,

@@ -246,8 +246,14 @@ module RSpecQ
       @redis.hset(key_errors, job, message)
     end
 
-    def record_timing(job, duration)
-      @redis.zadd(key_timings, duration, job)
+    def record_build_timing(job, duration)
+      @redis.zadd(key_build_timings, duration, job)
+    end
+
+    # Persist build timings to the global timings key, so that they can be
+    # used for scheduling future builds.
+    def update_global_timings
+      @redis.copy(key_build_timings, key_timings, replace: true)
     end
 
     def record_build_time(duration)
@@ -286,8 +292,13 @@ module RSpecQ
     end
 
     # ordered by execution time desc (slowest are in the head)
-    def timings
+    def global_timings
       @redis.zrevrange(key_timings, 0, -1, withscores: true).to_h
+    end
+
+    # ordered by execution time desc (slowest are in the head)
+    def build_timings
+      @redis.zrevrange(key_build_timings, 0, -1, withscores: true).to_h
     end
 
     def example_failures
@@ -502,6 +513,10 @@ module RSpecQ
     # Otherwise, timings won't be accurate.
     def key_timings
       "timings"
+    end
+
+    def key_build_timings
+      key("timings")
     end
 
     # redis: LIST<duration>
