@@ -10,7 +10,7 @@ module RSpecQ
       end
 
       def dump_summary(summary)
-        @queue.record_timing(@job, Float(summary.duration))
+        @queue.record_build_timing(@job, Float(summary.duration))
       end
     end
   end
