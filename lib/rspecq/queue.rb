@@ -88,7 +88,9 @@ module RSpecQ
         pipeline.hset(key_queue_config, "fail_fast", fail_fast)
         pipeline.rpush(key_queue_unprocessed, jobs)
         pipeline.set(key_queue_status, STATUS_READY)
-      end.first
+      end
+
+      jobs.size
     end
 
     def reserve_job
