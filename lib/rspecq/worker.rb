@@ -87,7 +87,9 @@ module RSpecQ
     def work
       puts "Working for build #{@build_id} (worker=#{@worker_id})"
 
-      try_publish_queue!(queue)
+      q_size = try_publish_queue!(queue)
+      puts "Published queue (size=#{q_size})" if q_size
+
       queue.wait_until_published(queue_wait_timeout)
       queue.save_worker_seed(@worker_id, seed)
 
@@ -153,7 +155,7 @@ module RSpecQ
           "Reproduction mode. Published queue as given (size=#{q_size})",
           "info"
         )
-        return
+        return q_size
       end
       RSpec.configuration.files_or_directories_to_run = files_or_dirs_to_run
       files_to_run = RSpec.configuration.files_to_run.map { |j| relative_path(j) }
@@ -165,7 +167,7 @@ module RSpecQ
           "No timings found! Published queue in random order (size=#{q_size})",
           "warning"
         )
-        return
+        return q_size
       end
 
       # prepare jobs to run
@@ -199,7 +201,7 @@ module RSpecQ
       # sort jobs based on their timings (slowest to be processed first)
       jobs = jobs.sort_by { |_j, t| -t }.map(&:first)
 
-      puts "Published queue (size=#{queue.publish(jobs, fail_fast)})"
+      queue.publish(jobs, fail_fast)
     end
 
     private
