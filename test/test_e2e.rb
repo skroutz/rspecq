@@ -91,6 +91,25 @@ class TestEndToEnd < RSpecQTest
     ], queue.build_timings.sort_by { |_, v| v }.map(&:first)
   end
 
+  def test_global_timings_update_different_key
+    queue = exec_build("timings")
+
+    custom_key = "timings-#{rand_id}"
+    exec_reporter("--update-timings --timings-key=#{custom_key}", build_id: queue.build_id)
+
+    assert queue.build_successful?
+
+    redis = Redis.new(REDIS_OPTS)
+    assert_equal [
+      "./spec/very_fast_spec.rb",
+      "./spec/fast_spec.rb",
+      "./spec/medium_spec.rb",
+      "./spec/slow_spec.rb",
+      "./spec/very_slow_spec.rb",
+    ], redis.zrevrange(custom_key, 0, -1, withscores: true).to_h
+            .sort_by { |_, v| v }.map(&:first)
+  end
+
   def test_global_timings_update
     queue = exec_build("timings")
     exec_reporter("--update-timings", build_id: queue.build_id)
