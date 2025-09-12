@@ -187,9 +187,17 @@ module RSpecQ
         jobs.concat(files_to_run)
       end
 
+      jobs = order_jobs_by_timings(jobs)
+      queue.publish(jobs, fail_fast)
+    end
+
+    private
+
+    def order_jobs_by_timings(jobs)
+      timings = queue.timings
+
       default_timing = timings.values[timings.values.size / 2]
 
-      # assign timings (based on previous runs) to all jobs
       jobs = jobs.each_with_object({}) do |j, h|
         puts "Untimed job: #{j}" if timings[j].nil?
 
@@ -199,12 +207,8 @@ module RSpecQ
       end
 
       # sort jobs based on their timings (slowest to be processed first)
-      jobs = jobs.sort_by { |_j, t| -t }.map(&:first)
-
-      queue.publish(jobs, fail_fast)
+      jobs.sort_by { |_j, t| -t }.map(&:first)
     end
-
-    private
 
     def reset_rspec_state!
       RSpec.clear_examples
