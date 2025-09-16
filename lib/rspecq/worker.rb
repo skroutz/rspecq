@@ -137,6 +137,10 @@ module RSpecQ
       end
     end
 
+    def global_timings
+      @global_timings ||= queue.global_timings
+    end
+
     def try_publish_queue!(queue)
       return if !queue.become_master
 
@@ -151,8 +155,7 @@ module RSpecQ
       RSpec.configuration.files_or_directories_to_run = files_or_dirs_to_run
       files_to_run = RSpec.configuration.files_to_run.map { |j| relative_path(j) }
 
-      timings = queue.global_timings
-      if timings.empty?
+      if global_timings.empty?
         q_size = queue.publish(files_to_run.shuffle, fail_fast)
         log_event(
           "No global timings found! Published queue in random order (size=#{q_size})",
@@ -166,7 +169,7 @@ module RSpecQ
       slow_files = []
 
       if file_split_threshold
-        slow_files = timings.take_while do |_job, duration|
+        slow_files = global_timings.take_while do |_job, duration|
           duration >= file_split_threshold
         end.map(&:first) & files_to_run
       end
@@ -185,7 +188,7 @@ module RSpecQ
     private
 
     def order_jobs_by_timings(jobs)
-      timings = queue.global_timings
+      timings = global_timings
 
       default_timing = timings.values[timings.values.size / 2]
 
