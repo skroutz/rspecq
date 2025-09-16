@@ -165,4 +165,27 @@ class TestEndToEnd < RSpecQTest
 
     assert_includes [2, 3], queue.processed_jobs.length
   end
+
+  def test_immediate_worker_exit
+    pid, queue = spawn_build("slow")
+
+    # Wait for the worker to publish the queue
+    queue.wait_until_published
+
+    refute queue.exhausted?
+    assert queue.worker_heartbeats[queue.worker_id].to_i > 0
+
+    Process.kill("QUIT", pid)
+    Process.wait(pid)
+
+    # Check that the build is not finished
+    refute queue.exhausted?
+    assert_processed_jobs [], queue
+    assert_empty queue.worker_heartbeats
+  ensure
+    if pid
+      Process.kill("KILL", pid) rescue nil
+      Process.wait(pid) rescue nil
+    end
+  end
 end

@@ -73,10 +73,27 @@ module RSpecQ
       return true
     LUA
 
+    REMOVE_WORKER = <<~LUA.freeze
+      local key_queue_unprocessed = KEYS[1]
+      local key_worker_heartbeats = KEYS[2]
+      local key_queue_running = KEYS[3]
+      local worker = ARGV[1]
+
+      local job = redis.call('hget', key_queue_running, worker)
+      if job then
+        redis.call('lpush', key_queue_unprocessed, job)
+      end
+
+      redis.call('zrem', key_worker_heartbeats, worker)
+      redis.call('hdel', key_queue_running, worker)
+
+      return true
+    LUA
+
     STATUS_INITIALIZING = "initializing".freeze
     STATUS_READY = "ready".freeze
 
-    attr_reader :redis, :build_id
+    attr_reader :redis, :build_id, :worker_id
 
     def initialize(build_id, worker_id, redis_opts)
       @build_id = build_id
@@ -151,6 +168,14 @@ module RSpecQ
         REQUEUE_JOB,
         keys: [key_queue_unprocessed, key_requeues, key("requeued_job_original_worker"), key("job_location")],
         argv: [job, max_requeues, original_worker_id, location]
+      )
+    end
+
+    def remove_worker(worker)
+      eval_script(
+        REMOVE_WORKER,
+        keys: [key_queue_unprocessed, key_worker_heartbeats, key_queue_running],
+        argv: [worker]
       )
     end
 
@@ -229,6 +254,10 @@ module RSpecQ
 
     def record_worker_heartbeat
       @redis.zadd(key_worker_heartbeats, current_time, @worker_id)
+    end
+
+    def worker_heartbeats
+      @redis.zrange(key_worker_heartbeats, 0, -1, withscores: true).to_h
     end
 
     def increment_example_count(n)

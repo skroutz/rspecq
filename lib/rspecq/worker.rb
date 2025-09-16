@@ -16,6 +16,9 @@ module RSpecQ
   #
   # Workers are readers+writers of the queue.
   class Worker
+
+    class WorkerExit < SystemExit; end
+
     HEARTBEAT_FREQUENCY = WORKER_LIVENESS_SEC / 6
 
     # The root path or individual spec files to execute.
@@ -86,8 +89,17 @@ module RSpecQ
 
       Signal.trap("TERM") do
         puts "\nReceived SIGTERM! Exiting gracefully!\n"
-        @shutdown = true
+        force_queue
       end
+
+      Signal.trap("QUIT") do
+        puts "\nReceived SIGQUIT! Exiting immediately! Raising WorkerExit\n"
+        raise WorkerExit.new(42)
+      end
+    end
+
+    def force_quit
+      @shutdown = true
     end
 
     def set_start_working_time
@@ -99,6 +111,14 @@ module RSpecQ
     end
 
     def work
+      work_loop
+    rescue WorkerExit => e
+      queue.remove_worker(@worker_id)
+      puts "Stopping worker due to WorkerExit, #{e.status}"
+      exit e.status
+    end
+
+    def work_loop
       puts "Working for build #{@build_id} (worker=#{@worker_id})"
 
       q_size = try_publish_queue!(queue)
@@ -154,6 +174,7 @@ module RSpecQ
         options = ["--format", "progress", job]
         tags.each { |tag| options.push("--tag", tag) }
         opts = RSpec::Core::ConfigurationOptions.new(options)
+
         _result = RSpec::Core::Runner.new(opts).run($stderr, $stdout)
 
         queue.acknowledge_job(job)
