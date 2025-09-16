@@ -100,8 +100,9 @@ class TestScheduling < RSpecQTest
   def test_early_yielding_jobs_before_publishing
     # 1st run to populate timings so that we trigger the test splitting
     worker = new_worker("scheduling")
-    worker.populate_timings = true
     silent { worker.work }
+    worker.queue.update_global_timings
+
     assert_queue_well_formed(worker.queue)
 
     # Setup a thread to monitor Redis commands before triggering a
@@ -138,8 +139,9 @@ class TestScheduling < RSpecQTest
   def test_disabled_early_yielding_jobs_before_publishing
     # 1st run to populate timings so that we trigger the test splitting
     worker = new_worker("scheduling")
-    worker.populate_timings = true
     silent { worker.work }
+    worker.queue.update_global_timings
+
     assert_queue_well_formed(worker.queue)
 
     # Setup a thread to monitor Redis commands before triggering a
