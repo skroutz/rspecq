@@ -77,8 +77,8 @@ class TestEndToEnd < RSpecQTest
     assert_equal ["./spec/foo_spec.rb"], queue.non_example_errors.keys
   end
 
-  def test_timings_update
-    queue = exec_build("timings", "--update-timings")
+  def test_build_timings_update
+    queue = exec_build("timings")
 
     assert queue.build_successful?
 
@@ -88,25 +88,61 @@ class TestEndToEnd < RSpecQTest
       "./spec/medium_spec.rb",
       "./spec/slow_spec.rb",
       "./spec/very_slow_spec.rb",
-    ], queue.timings.sort_by { |_, v| v }.map(&:first)
+    ], queue.build_timings.sort_by { |_, v| v }.map(&:first)
+  end
+
+  def test_global_timings_update_different_key
+    queue = exec_build("timings")
+
+    custom_key = "timings-#{rand_id}"
+    exec_reporter("--update-timings --timings-key=#{custom_key}", build_id: queue.build_id)
+
+    assert queue.build_successful?
+
+    redis = Redis.new(REDIS_OPTS)
+    assert_equal [
+      "./spec/very_fast_spec.rb",
+      "./spec/fast_spec.rb",
+      "./spec/medium_spec.rb",
+      "./spec/slow_spec.rb",
+      "./spec/very_slow_spec.rb",
+    ], redis.zrevrange(custom_key, 0, -1, withscores: true).to_h
+            .sort_by { |_, v| v }.map(&:first)
+  end
+
+  def test_global_timings_update
+    queue = exec_build("timings")
+    exec_reporter("--update-timings", build_id: queue.build_id)
+
+    assert queue.build_successful?
+
+    assert_equal [
+      "./spec/very_fast_spec.rb",
+      "./spec/fast_spec.rb",
+      "./spec/medium_spec.rb",
+      "./spec/slow_spec.rb",
+      "./spec/very_slow_spec.rb",
+    ], queue.global_timings.sort_by { |_, v| v }.map(&:first)
   end
 
   def test_timings_no_update
     queue = exec_build("timings")
 
     assert queue.build_successful?
-    assert_empty queue.timings
+    assert_empty queue.global_timings
   end
 
   def test_spec_file_splitting
-    queue = exec_build("spec_file_splitting", "--update-timings")
+    queue = exec_build("spec_file_splitting")
     assert queue.build_successful?
-    refute_empty queue.timings
+
+    exec_reporter("--update-timings", build_id: queue.build_id)
+    refute_empty queue.global_timings
 
     queue = exec_build("spec_file_splitting", "--file-split-threshold 1")
 
     assert queue.build_successful?
-    refute_empty queue.timings
+    refute_empty queue.build_timings
     assert_processed_jobs([
       "./spec/slow_spec.rb[1:2:1]",
       "./spec/slow_spec.rb[1:1]",

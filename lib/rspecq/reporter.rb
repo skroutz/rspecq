@@ -9,11 +9,21 @@ module RSpecQ
   #
   # Reporters are readers of the queue.
   class Reporter
-    def initialize(build_id:, timeout:, redis_opts:, queue_wait_timeout: 30)
+    # If true, job timings will be populated in the global Redis timings key
+    #
+    # Defaults to false
+    attr_accessor :update_timings
+
+    def initialize(build_id:, timeout:, redis_opts:,
+                   queue_wait_timeout: 30,
+                   update_timings: false,
+                   timings_key: nil)
       @build_id = build_id
       @timeout = timeout
       @queue = Queue.new(build_id, "reporter", redis_opts)
       @queue_wait_timeout = queue_wait_timeout
+      @update_timings = update_timings
+      @timings_key = timings_key
 
       # We want feedback to be immediattely printed to CI users, so
       # we disable buffering.
@@ -55,6 +65,16 @@ module RSpecQ
       raise "Build not finished after #{@timeout} seconds" if !finished
 
       @queue.record_build_time(tests_duration)
+
+      if update_timings && @queue.build_successful?
+        if @timings_key
+          puts "Updating job timings @ #{@timings_key}"
+          @queue.update_global_timings(@timings_key)
+        else
+          puts "Updating global job timings"
+          @queue.update_global_timings
+        end
+      end
 
       flaky_jobs = @queue.flaky_jobs
 

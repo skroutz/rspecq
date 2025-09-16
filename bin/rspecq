@@ -64,7 +64,11 @@ OptionParser.new do |o|
   o.on("--update-timings", "Update the global job timings key with the "     \
        "timings of this build. Note: This key is used as the basis for job " \
        "scheduling.") do |v|
-    opts[:timings] = v
+    opts[:update_timings] = v
+  end
+
+  o.on("--timings-key KEY", "Update KEY instead of the default global job timings key.") do |v|
+    opts[:timings_key] = v
   end
 
   o.on("--file-split-threshold N", Integer, "Split spec files slower than N " \
@@ -131,7 +135,8 @@ opts[:build] ||= ENV.fetch("RSPECQ_BUILD", nil)
 opts[:worker] ||= ENV.fetch("RSPECQ_WORKER", nil)
 opts[:seed] ||= ENV.fetch("RSPECQ_SEED", nil)
 opts[:redis_host] ||= ENV["RSPECQ_REDIS"] || DEFAULT_REDIS_HOST
-opts[:timings] ||= env_set?("RSPECQ_UPDATE_TIMINGS")
+opts[:update_timings] ||= env_set?("RSPECQ_UPDATE_TIMINGS")
+opts[:timings_key] ||= ENV.fetch("RSPECQ_TIMINGS_KEY", nil)
 opts[:file_split_threshold] ||= Integer(ENV["RSPECQ_FILE_SPLIT_THRESHOLD"] || 9_999_999)
 opts[:report] ||= env_set?("RSPECQ_REPORT")
 opts[:report_timeout] ||= Integer(ENV["RSPECQ_REPORT_TIMEOUT"] || DEFAULT_REPORT_TIMEOUT)
@@ -161,6 +166,8 @@ if opts[:report]
     build_id: opts[:build],
     timeout: opts[:report_timeout],
     redis_opts: redis_opts,
+    update_timings: opts[:update_timings],
+    timings_key: opts[:timings_key],
     queue_wait_timeout: opts[:queue_wait_timeout]
   )
 
@@ -173,7 +180,6 @@ else
   )
 
   worker.files_or_dirs_to_run = ARGV if ARGV.any?
-  worker.populate_timings = opts[:timings]
   worker.file_split_threshold = opts[:file_split_threshold]
   worker.max_requeues = opts[:max_requeues]
   worker.queue_wait_timeout = opts[:queue_wait_timeout]

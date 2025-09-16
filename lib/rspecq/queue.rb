@@ -74,7 +74,7 @@ module RSpecQ
     STATUS_INITIALIZING = "initializing".freeze
     STATUS_READY = "ready".freeze
 
-    attr_reader :redis
+    attr_reader :redis, :build_id
 
     def initialize(build_id, worker_id, redis_opts)
       @build_id = build_id
@@ -179,8 +179,14 @@ module RSpecQ
       @redis.hset(key_errors, job, message)
     end
 
-    def record_timing(job, duration)
-      @redis.zadd(key_timings, duration, job)
+    def record_build_timing(job, duration)
+      @redis.zadd(key_build_timings, duration, job)
+    end
+
+    # Persist build timings to the global timings key, so that they can be
+    # used for scheduling future builds.
+    def update_global_timings(dst = key_timings)
+      @redis.copy(key_build_timings, dst, replace: true)
     end
 
     def record_build_time(duration)
@@ -219,8 +225,23 @@ module RSpecQ
     end
 
     # ordered by execution time desc (slowest are in the head)
-    def timings
-      @redis.zrevrange(key_timings, 0, -1, withscores: true).to_h
+    def global_timings
+      redis_timings = @redis.zrevrange(key_timings, 0, -1, withscores: true).to_h
+
+      # Populate timings for whole files that were split into individual
+      # examples, by summing up the timings of their individual parts.
+      #
+      # We need that so that the scheduler will be able to mark them for splitting again
+      whole_file_timings = populate_splitted_file_timings(redis_timings)
+      return redis_timings if whole_file_timings.empty?
+
+      redis_timings.merge!(whole_file_timings)
+      redis_timings.sort_by { |_j, d| -d }.to_h
+    end
+
+    # ordered by execution time desc (slowest are in the head)
+    def build_timings
+      @redis.zrevrange(key_build_timings, 0, -1, withscores: true).to_h
     end
 
     def example_failures
@@ -373,6 +394,10 @@ module RSpecQ
       "timings"
     end
 
+    def key_build_timings
+      key("timings")
+    end
+
     # redis: LIST<duration>
     #
     # Last build is at the head of the list.
@@ -401,6 +426,21 @@ module RSpecQ
     # before(:all) hooks will mess up our times.
     def current_time
       @redis.time[0]
+    end
+
+    # Given a set splitted file timing entries, we reconstruct the file's
+    # timings by summing up the timings of its individual parts.
+    def populate_splitted_file_timings(timings)
+      whole_file_timings = Hash.new(0)
+
+      timings.each do |file, duration|
+        next if !file.include?("[")
+
+        base_file = file.split("[").first
+        whole_file_timings[base_file] += duration
+      end
+
+      whole_file_timings
     end
   end
 end

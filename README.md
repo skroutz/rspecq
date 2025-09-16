@@ -69,6 +69,7 @@ OPTIONS:
         --redis-host HOST            Redis host to connect to (default: 127.0.0.1).
         --redis-url URL              Redis URL to connect to (e.g.: redis://127.0.0.1:6379/0).
         --update-timings             Update the global job timings key with the timings of this build. Note: This key is used as the basis for job scheduling.
+        --timings-key KEY            Update KEY instead of the default global timings key.
         --file-split-threshold N     Split spec files slower than N seconds and schedule them as individual examples.
         --report                     Enable reporter mode: do not pull tests off the queue; instead print build progress and exit when it's finished.
                                      Exits with a non-zero status code if there were any failures.
@@ -97,6 +98,7 @@ $ RSPECQ_BUILD=123 RSPECQ_WORKER=foo1 rspecq spec/
 | `RSPECQ_SEED` | RSpec seed |
 | `RSPECQ_REDIS` | Redis HOST |
 | `RSPECQ_UPDATE_TIMINGS` | Timings |
+| `RSPECQ_TIMINGS_KEY` | Timings key to update (reporter only) |
 | `RSPECQ_FILE_SPLIT_THRESHOLD` | File split threshold |
 | `RSPECQ_REPORT` | Report |
 | `RSPECQ_REPORT_TIMEOUT` | Report Timeout |
