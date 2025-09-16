@@ -80,6 +80,7 @@ module RSpecQ
       @build_id = build_id
       @worker_id = worker_id
       @redis = Redis.new(redis_opts.merge(id: worker_id))
+      @script_shas = {}
     end
 
     # NOTE: jobs will be processed from head to tail (lpop)
@@ -94,7 +95,7 @@ module RSpecQ
     end
 
     def reserve_job
-      @redis.eval(
+      eval_script(
         RESERVE_JOB,
         keys: [
           key_queue_unprocessed,
@@ -105,7 +106,7 @@ module RSpecQ
     end
 
     def requeue_lost_job
-      @redis.eval(
+      eval_script(
         REQUEUE_LOST_JOB,
         keys: [
           key_worker_heartbeats,
@@ -140,7 +141,7 @@ module RSpecQ
       job = example.id
       location = example.location_rerun_argument
 
-      @redis.eval(
+      eval_script(
         REQUEUE_JOB,
         keys: [key_queue_unprocessed, key_requeues, key("requeued_job_original_worker"), key("job_location")],
         argv: [job, max_requeues, original_worker_id, location]
@@ -380,6 +381,17 @@ module RSpecQ
     end
 
     private
+
+    def eval_script(script, keys: [], argv: [])
+      sha = @script_shas[script] ||= @redis.script(:load, script)
+      @redis.evalsha(sha, keys: keys, argv: argv)
+    rescue Redis::CommandError => e
+      raise unless e.message.include?("NOSCRIPT")
+
+      # The script was evicted from Redis. Let's reload it.
+      @script_shas[script] = nil
+      retry
+    end
 
     def key(*keys)
       [@build_id, keys].join(":")
