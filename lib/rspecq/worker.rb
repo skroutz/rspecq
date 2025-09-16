@@ -29,6 +29,12 @@ module RSpecQ
     # Defaults to 999999
     attr_accessor :file_split_threshold
 
+    # If set, worker will *only* try to emit up to a certain number of jobs
+    # as soon as possible to increase job fairness.
+    #
+    # Defaults to nil (disabled)
+    attr_accessor :early_push_max_jobs
+
     # Retry failed examples up to N times (with N being the supplied value)
     # before considering them legit failures
     #
@@ -84,7 +90,6 @@ module RSpecQ
       q_size = try_publish_queue!(queue)
       puts "Published queue (size=#{q_size})" if q_size
 
-      queue.wait_until_published(queue_wait_timeout)
       queue.save_worker_seed(@worker_id, seed)
 
       loop do
@@ -145,7 +150,7 @@ module RSpecQ
       return if !queue.become_master
 
       if reproduction
-        q_size = queue.publish(files_or_dirs_to_run, fail_fast)
+        q_size = queue.push_jobs(files_or_dirs_to_run, fail_fast)
         log_event(
           "Reproduction mode. Published queue as given (size=#{q_size})",
           "info"
@@ -156,7 +161,7 @@ module RSpecQ
       files_to_run = RSpec.configuration.files_to_run.map { |j| relative_path(j) }
 
       if global_timings.empty?
-        q_size = queue.publish(files_to_run.shuffle, fail_fast)
+        q_size = queue.push_jobs(files_to_run.shuffle, fail_fast)
         log_event(
           "No global timings found! Published queue in random order (size=#{q_size})",
           "warning"
@@ -165,7 +170,6 @@ module RSpecQ
       end
 
       # prepare jobs to run
-      jobs = []
       slow_files = []
 
       if file_split_threshold
@@ -174,15 +178,27 @@ module RSpecQ
         end.map(&:first) & files_to_run
       end
 
-      if slow_files.any?
-        jobs.concat(files_to_run - slow_files)
-        jobs.concat(files_to_example_ids(slow_files))
-      else
-        jobs.concat(files_to_run)
+      if slow_files.empty?
+        return queue.push_jobs(order_jobs_by_timings(files_to_run), fail_fast)
       end
 
-      jobs = order_jobs_by_timings(jobs)
-      queue.publish(jobs, fail_fast)
+      jobs = order_jobs_by_timings(files_to_run - slow_files)
+      pending = []
+
+      # Push non-slow files first to make sure that workers can start working
+      if early_push_max_jobs # push jobs up to the threshold
+        rest = jobs
+
+        jobs = rest.shift(early_push_max_jobs)
+        pending = rest
+      end
+
+      queue.push_jobs(jobs, fail_fast, publish: false)
+
+      # Populate splitted slow files
+      pending += files_to_example_ids(slow_files)
+
+      queue.push_jobs(order_jobs_by_timings(pending), fail_fast)
     end
 
     private

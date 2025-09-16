@@ -138,6 +138,7 @@ opts[:redis_host] ||= ENV["RSPECQ_REDIS"] || DEFAULT_REDIS_HOST
 opts[:update_timings] ||= env_set?("RSPECQ_UPDATE_TIMINGS")
 opts[:timings_key] ||= ENV.fetch("RSPECQ_TIMINGS_KEY", nil)
 opts[:file_split_threshold] ||= Integer(ENV["RSPECQ_FILE_SPLIT_THRESHOLD"] || 9_999_999)
+opts[:early_push_max_jobs] ||= Integer(ENV["RSPECQ_EARLY_PUSH_MAX_JOBS"]) if ENV["RSPECQ_EARLY_PUSH_MAX_JOBS"]
 opts[:report] ||= env_set?("RSPECQ_REPORT")
 opts[:report_timeout] ||= Integer(ENV["RSPECQ_REPORT_TIMEOUT"] || DEFAULT_REPORT_TIMEOUT)
 opts[:max_requeues] ||= Integer(ENV["RSPECQ_MAX_REQUEUES"] || DEFAULT_MAX_REQUEUES)
@@ -181,6 +182,7 @@ else
 
   worker.files_or_dirs_to_run = ARGV if ARGV.any?
   worker.file_split_threshold = opts[:file_split_threshold]
+  worker.early_push_max_jobs = opts[:early_push_max_jobs] if opts[:early_push_max_jobs]
   worker.max_requeues = opts[:max_requeues]
   worker.queue_wait_timeout = opts[:queue_wait_timeout]
   worker.fail_fast = opts[:fail_fast]
