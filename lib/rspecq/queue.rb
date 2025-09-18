@@ -71,10 +71,32 @@ module RSpecQ
       return true
     LUA
 
+    REMOVE_WORKER = <<~LUA.freeze
+      local key_queue_unprocessed = KEYS[1]
+      local key_worker_heartbeats = KEYS[2]
+      local key_queue_running = KEYS[3]
+      local key_workers_withdrawn = KEYS[4]
+      local worker = ARGV[1]
+      local non_graceful = false
+
+      local job = redis.call('hget', key_queue_running, worker)
+      if job then
+        redis.call('lpush', key_queue_unprocessed, job)
+        redis.call('hdel', key_queue_running, worker)
+        redis.call('hincrby', key_workers_withdrawn, worker, 1)
+
+        non_graceful = true
+      end
+
+      redis.call('zrem', key_worker_heartbeats, worker)
+
+      return non_graceful
+    LUA
+
     STATUS_INITIALIZING = "initializing".freeze
     STATUS_READY = "ready".freeze
 
-    attr_reader :redis
+    attr_reader :redis, :build_id, :worker_id
 
     def initialize(build_id, worker_id, redis_opts)
       @build_id = build_id
@@ -148,8 +170,30 @@ module RSpecQ
       )
     end
 
+    # Remove worker from the queue, requeuing its reserved job if any.
+    def remove_worker(worker)
+      eval_script(
+        REMOVE_WORKER,
+        keys: [
+          key_queue_unprocessed,
+          key_worker_heartbeats,
+          key_queue_running,
+          key_workers_withdrawn
+        ],
+        argv: [worker]
+      )
+    end
+
     def save_worker_seed(worker, seed)
       @redis.hset(key("worker_seed"), worker, seed)
+    end
+
+    def worker_heartbeats
+      @redis.zrange(key_worker_heartbeats, 0, -1, withscores: true).to_h
+    end
+
+    def workers_withdrawn
+      @redis.hgetall(key_workers_withdrawn)
     end
 
     def job_location(job)
@@ -355,6 +399,12 @@ module RSpecQ
     # redis: STRING<integer>
     def key_example_count
       key("example_count")
+    end
+
+    # The total number of times a worker was removed while having a reserved job.
+    # This might happen if the worker is terminated in a non-graceful way.
+    def key_workers_withdrawn
+      key("workers_withdrawn")
     end
 
     # redis: ZSET<worker_id => timestamp>

@@ -28,7 +28,6 @@ class TestConcurrentWorkers < RSpecQTest
     assert_queue_well_formed(queue)
     assert queue.build_successful?
     assert_equal job_count, queue.example_count
-    assert_equal job_count, queue.redis.zcard(queue.key_worker_heartbeats)
   end
 
   def test_flakey_suite

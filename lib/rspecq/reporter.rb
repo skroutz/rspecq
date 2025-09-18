@@ -104,6 +104,14 @@ module RSpecQ
       summary << "\n\n"
       summary << "Spec execution time: #{duration}"
 
+      if @queue.workers_withdrawn.any?
+        summary << "\n"
+        summary << "Workers withdrawn (count=#{@queue.workers_withdrawn.count}):\n"
+        @queue.workers_withdrawn.each do |worker, count|
+          summary << "  Worker #{worker} withdrawn #{count} times\n"
+        end
+      end
+
       if !flaky_jobs.empty?
         summary << "\n\n"
         summary << "Flaky jobs detected (count=#{flaky_jobs.count}):\n"

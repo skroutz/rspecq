@@ -61,11 +61,12 @@ module RSpecQ
     # given in the command.
     attr_accessor :reproduction
 
-    attr_reader :queue, :build_id, :worker_id
+    attr_reader :queue, :build_id, :worker_id, :redis_opts
 
-    def initialize(build_id:, worker_id:, redis_opts:)
+    def initialize(build_id:, worker_id:, redis_opts:, shutdown_pipe: nil)
       @build_id = build_id
       @worker_id = worker_id
+      @redis_opts = redis_opts
       @queue = Queue.new(build_id, worker_id, redis_opts)
       @fail_fast = 0
       @files_or_dirs_to_run = "spec"
@@ -77,11 +78,16 @@ module RSpecQ
       @seed = srand && (srand % 0xFFFF)
       @tags = []
       @reproduction = false
+      @shutdown_pipe = shutdown_pipe
 
       RSpec::Core::Formatters.register(Formatters::JobTimingRecorder, :dump_summary)
       RSpec::Core::Formatters.register(Formatters::ExampleCountRecorder, :dump_summary)
       RSpec::Core::Formatters.register(Formatters::FailureRecorder, :example_failed, :message)
       RSpec::Core::Formatters.register(Formatters::WorkerHeartbeatRecorder, :example_finished)
+    end
+
+    def shutdown?
+      @shutdown_pipe&.ready?
     end
 
     def work
@@ -98,6 +104,7 @@ module RSpecQ
         # to `requeue_lost_job` inside the work loop
         update_heartbeat
 
+        return if shutdown?
         return if queue.build_failed_fast?
 
         lost = queue.requeue_lost_job
