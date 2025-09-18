@@ -129,4 +129,81 @@ class TestEndToEnd < RSpecQTest
 
     assert_includes [2, 3], queue.processed_jobs.length
   end
+
+  def test_graceful_shutdown
+    pid, queue = start_worker("rescue_exception",
+     "--max-requeues=0 --graceful_shutdown_timeout=5")
+    queue.wait_until_published
+    sleep 1 # make sure the worker has reached `sleep 3` in the spec
+
+    refute queue.exhausted?
+    assert queue.worker_heartbeats[queue.worker_id].to_i > 0
+
+    # Send TERM to the supervisor process to trigger worker graceful shutdown
+    # that will not be followed by SIGKILL (test sleeps for 3secs)
+    Process.kill("TERM", pid)
+    Process.wait(pid)
+    pid = nil
+
+    # Check that the build is not finished
+    assert queue.exhausted?
+    refute_empty queue.processed_jobs
+    assert_empty queue.workers_withdrawn
+  ensure
+    if pid
+      begin
+        Process.kill("TERM", pid)
+      rescue StandardError
+        nil
+      end
+      begin
+        Process.wait(pid)
+      rescue StandardError
+        nil
+      end
+    end
+  end
+
+  def test_ungraceful_shutdown_and_exception_swallowing
+    # Make sure that ungraceful shutdown while having a reserved job
+    # works as expected.
+    #
+    # Also make sure that the shutdown sequence does not interfere
+    # with exception handling in the worker (i.e. that it does not
+    # trigger an exception that is eventually handled by rspec).
+    pid, queue = start_worker("rescue_exception",
+     "--max-requeues=0 --graceful_shutdown_timeout=1")
+    queue.wait_until_published
+    sleep 1 # make sure the worker has reached `sleep 3` in the spec
+
+    refute queue.exhausted?
+    assert queue.worker_heartbeats[queue.worker_id].to_i > 0
+
+    # Send TERM to the supervisor process to trigger worker graceful shutdown
+    # that will be followed by SIGKILL after 1 second, making the worker exit
+    # while having a reserved job.
+    Process.kill("TERM", pid)
+    Process.wait(pid)
+    pid = nil
+
+    # If the exception is swallowed, the job will be marked as processed
+    # So, we check that the build is not finished
+    refute queue.exhausted?
+    assert_empty queue.processed_jobs
+    assert_empty queue.worker_heartbeats
+    assert_equal 1, queue.workers_withdrawn[queue.worker_id].to_i
+  ensure
+    if pid
+      begin
+        Process.kill("TERM", pid)
+      rescue StandardError
+        nil
+      end
+      begin
+        Process.wait(pid)
+      rescue StandardError
+        nil
+      end
+    end
+  end
 end

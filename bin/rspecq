@@ -8,6 +8,9 @@ DEFAULT_MAX_REQUEUES = 3
 DEFAULT_QUEUE_WAIT_TIMEOUT = 30
 DEFAULT_FAIL_FAST = 0
 
+DEFAULT_GRACEFUL_SHUTDOWN_TIMEOUT = 10
+DEFAULT_GRACEFUL_SHUTDOWN_SIGNAL = "TERM".freeze
+
 def env_set?(var)
   ["1", "true"].include?(ENV.fetch(var, nil))
 end
@@ -72,6 +75,18 @@ OptionParser.new do |o|
     opts[:file_split_threshold] = v
   end
 
+  o.on("--graceful-shutdown-signal SIGNAL", "The signal that triggers " \
+       "graceful shutdown. Typically TERM. (default: "                 \
+       "#{DEFAULT_GRACEFUL_SHUTDOWN_SIGNAL}).") do |v|
+    opts[:graceful_shutdown_signal] = v
+  end
+
+  o.on("--graceful-shutdown-timeout N", Integer, "The time in seconds to " \
+       "wait after receiving the graceful shutdown signal before "        \
+       "forcing shutdown. (default: #{DEFAULT_GRACEFUL_SHUTDOWN_TIMEOUT}).") do |v|
+    opts[:graceful_shutdown_timeout] = v
+  end
+
   o.on("--report", "Enable reporter mode: do not pull tests off the queue; " \
                    "instead print build progress and exit when it's "        \
                    "finished.\n#{o.summary_indent * 9} "                       \
@@ -133,6 +148,9 @@ opts[:seed] ||= ENV.fetch("RSPECQ_SEED", nil)
 opts[:redis_host] ||= ENV["RSPECQ_REDIS"] || DEFAULT_REDIS_HOST
 opts[:timings] ||= env_set?("RSPECQ_UPDATE_TIMINGS")
 opts[:file_split_threshold] ||= Integer(ENV["RSPECQ_FILE_SPLIT_THRESHOLD"] || 9_999_999)
+opts[:graceful_shutdown_signal] ||= ENV.fetch("RSPECQ_GRACEFUL_SHUTDOWN_SIGNAL", DEFAULT_GRACEFUL_SHUTDOWN_SIGNAL)
+opts[:graceful_shutdown_timeout] ||= Integer(ENV.fetch("RSPECQ_GRACEFUL_SHUTDOWN_TIMEOUT",
+  DEFAULT_GRACEFUL_SHUTDOWN_TIMEOUT))
 opts[:report] ||= env_set?("RSPECQ_REPORT")
 opts[:report_timeout] ||= Integer(ENV["RSPECQ_REPORT_TIMEOUT"] || DEFAULT_REPORT_TIMEOUT)
 opts[:max_requeues] ||= Integer(ENV["RSPECQ_MAX_REQUEUES"] || DEFAULT_MAX_REQUEUES)
@@ -166,20 +184,27 @@ if opts[:report]
 
   reporter.report
 else
-  worker = RSpecQ::Worker.new(
-    build_id: opts[:build],
-    worker_id: opts[:worker],
-    redis_opts: redis_opts
+  supervisor = RSpecQ::Supervisor.new(
+    graceful_shutdown_signal: opts[:graceful_shutdown_signal],
+    graceful_shutdown_timeout: opts[:graceful_shutdown_timeout],
+    worker_opts: {
+      build_id: opts[:build],
+      worker_id: opts[:worker],
+      redis_opts: redis_opts
+    }
   )
 
-  worker.files_or_dirs_to_run = ARGV if ARGV.any?
-  worker.populate_timings = opts[:timings]
-  worker.file_split_threshold = opts[:file_split_threshold]
-  worker.max_requeues = opts[:max_requeues]
-  worker.queue_wait_timeout = opts[:queue_wait_timeout]
-  worker.fail_fast = opts[:fail_fast]
-  worker.seed = Integer(opts[:seed]) if opts[:seed]
-  worker.reproduction = opts[:reproduction]
-  worker.tags = opts[:tags]
-  worker.work
+  supervisor.worker.tap do |worker|
+    worker.files_or_dirs_to_run = ARGV if ARGV.any?
+    worker.populate_timings = opts[:timings]
+    worker.file_split_threshold = opts[:file_split_threshold]
+    worker.max_requeues = opts[:max_requeues]
+    worker.queue_wait_timeout = opts[:queue_wait_timeout]
+    worker.fail_fast = opts[:fail_fast]
+    worker.seed = Integer(opts[:seed]) if opts[:seed]
+    worker.reproduction = opts[:reproduction]
+    worker.tags = opts[:tags]
+  end
+
+  supervisor.run
 end

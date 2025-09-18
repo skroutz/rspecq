@@ -70,6 +70,8 @@ OPTIONS:
         --redis-url URL              Redis URL to connect to (e.g.: redis://127.0.0.1:6379/0).
         --update-timings             Update the global job timings key with the timings of this build. Note: This key is used as the basis for job scheduling.
         --file-split-threshold N     Split spec files slower than N seconds and schedule them as individual examples.
+        --graceful-shutdown-signal   Graceful shutdown worker on signal.
+        --graceful-shutdown-timeout N SIGKILL worker after N seconds.
         --report                     Enable reporter mode: do not pull tests off the queue; instead print build progress and exit when it's finished.
                                      Exits with a non-zero status code if there were any failures.
         --report-timeout N           Fail if build is not finished after N seconds. Only applicable if --report is enabled (default: 3600).
@@ -98,6 +100,8 @@ $ RSPECQ_BUILD=123 RSPECQ_WORKER=foo1 rspecq spec/
 | `RSPECQ_REDIS` | Redis HOST |
 | `RSPECQ_UPDATE_TIMINGS` | Timings |
 | `RSPECQ_FILE_SPLIT_THRESHOLD` | File split threshold |
+| `RSPECQ_GRACEFUL_SHUTDOWN_SIGNAL` | Graceful worker shutdown signal |
+| `RSPECQ_GRACEFUL_SHUTDOWN_TIMEOUT` | Timeout before killing worker |
 | `RSPECQ_REPORT` | Report |
 | `RSPECQ_REPORT_TIMEOUT` | Report Timeout |
 | `RSPECQ_MAX_REQUEUES` | Max requests |

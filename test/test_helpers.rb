@@ -74,7 +74,6 @@ module TestHelpers
     File.join("test", "sample_suites", path)
   end
 
-
   # Supresses stdout of the code provided in the block
   def silent
     if ENV["RSPECQ_DEBUG"]
