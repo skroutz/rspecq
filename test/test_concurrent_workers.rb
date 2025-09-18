@@ -13,7 +13,8 @@ class TestConcurrentWorkers < RSpecQTest
     start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
 
     job_count.times do
-      pids << start_worker(build_id: build_id, suite: "passing_concurrent")
+      pid, _q = start_worker("passing_concurrent", build_id: build_id)
+      pids << pid
     end
 
     pids.each { |p| Process.wait(p) }
