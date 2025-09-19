@@ -120,7 +120,11 @@ module RSpecQ
           return
         end
 
-        next if job.nil?
+        if job.nil?
+          # backoff if no job is available
+          sleep 1
+          next
+        end
 
         puts
         puts "Executing #{job}"
