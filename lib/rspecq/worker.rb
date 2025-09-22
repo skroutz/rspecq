@@ -105,6 +105,12 @@ module RSpecQ
       @shutdown_pipe&.ready?
     end
 
+    # Do not exit when finished, so that k8s pod does not restart the container
+    # In our setup the pod will be shutdown by other means (reporter exiting || timeout)
+    def exit_when_finished?
+      ENV["RSPECQ_EXIT_WHEN_FINISHED"] != "0"
+    end
+
     def work
       puts "Working for build #{@build_id} (worker=#{@worker_id})"
 
@@ -131,7 +137,10 @@ module RSpecQ
 
         if queue.build_failed_fast?
           queue.try_mark_finished # build is finished
-          return
+
+          return if exit_when_finished?
+
+          sleep 1
         end
 
         lost, lost_worker = queue.requeue_lost_job
@@ -144,7 +153,10 @@ module RSpecQ
         # build is finished
         if job.nil? && queue.exhausted?
           queue.try_mark_finished
-          return
+
+          return if exit_when_finished?
+
+          sleep 1
         end
 
         if job.nil?
