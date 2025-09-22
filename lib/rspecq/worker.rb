@@ -115,7 +115,10 @@ module RSpecQ
         job = queue.reserve_job
 
         # build is finished
-        return if job.nil? && queue.exhausted?
+        if job.nil? && queue.exhausted?
+          queue.try_mark_finished
+          return
+        end
 
         next if job.nil?
 

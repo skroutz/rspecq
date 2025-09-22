@@ -7,7 +7,12 @@ module TestHelpers
       )
 
       assert queue.published?
-      assert(queue.build_failed_fast? || queue.exhausted?)
+
+      failed_fast = queue.build_failed_fast?
+      exhausted = queue.exhausted?
+      assert(failed_fast || exhausted)
+      assert queue.took_time_secs >= 0 if exhausted
+
       assert_operator heartbeats.size, :>=, 0
       assert(heartbeats.all? { |hb| Time.at(hb.last) <= Time.now })
     end

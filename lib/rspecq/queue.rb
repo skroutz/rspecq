@@ -107,9 +107,11 @@ module RSpecQ
 
     # NOTE: jobs will be processed from head to tail (lpop)
     def publish(jobs, fail_fast = 0)
+      time = current_time
       redis.multi do |pipeline|
         pipeline.hset(key_queue_config, "fail_fast", fail_fast)
         pipeline.rpush(key_queue_unprocessed, jobs)
+        pipeline.setnx(key_queue_ready_at, time)
         pipeline.set(key_queue_status, STATUS_READY)
       end
 
@@ -285,6 +287,24 @@ module RSpecQ
       end.inject(:+).zero?
     end
 
+    # Marks the build as finished by setting the finished_at timestamp.
+    #
+    # Only the first worker to call this method will succeed, subsequent
+    # calls will not overwrite the timestamp.
+    def try_mark_finished
+      @redis.setnx(key_queue_finished_at, current_time)
+    end
+
+    # Returns the seconds that the queue took to complete, or nil if the
+    # queue is not yet finished or has not yet started.
+    def took_time_secs
+      started = @redis.get(key_queue_ready_at)
+      finished = @redis.get(key_queue_finished_at)
+      return nil if started.nil? || finished.nil?
+
+      finished.to_i - started.to_i
+    end
+
     def published?
       @redis.get(key_queue_status) == STATUS_READY
     end
@@ -369,6 +389,20 @@ module RSpecQ
     # redis: SET<job>
     def key_queue_processed
       key("queue", "processed")
+    end
+
+    # Contains the timestamp of when the build started
+    #
+    # redis: STRING<timestamp>
+    def key_queue_ready_at
+      key("queue", "ready_at")
+    end
+
+    # Contains the timestamp of when the build finished.
+    #
+    # redis: STRING<timestamp>
+    def key_queue_finished_at
+      key("queue", "finished_at")
     end
 
     # Contains regular RSpec example failures.
