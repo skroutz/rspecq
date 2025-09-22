@@ -31,18 +31,20 @@ module RSpecQ
       def example_failed(notification)
         example = notification.example
 
-        if @queue.requeue_job(example, @max_requeues, @worker_id)
-          # HACK: try to avoid picking the job we just requeued; we want it
-          # to be picked up by a different worker
-          sleep 0.5
-          return
-        end
-
         presenter = RSpec::Core::Formatters::ExceptionPresenter.new(
           example.exception, example
         )
 
         msg = presenter.fully_formatted(nil, @colorizer)
+
+        if @queue.requeue_job(example, @max_requeues, @worker_id)
+          # HACK: try to avoid picking the job we just requeued; we want it
+          # to be picked up by a different worker
+          @queue.record_flaky_failure(notification.example.id, msg)
+          sleep 0.5
+          return
+        end
+
         msg << "\n"
         msg << @colorizer.wrap(
           "bin/rspec --seed #{RSpec.configuration.seed} #{example.location_rerun_argument}",
