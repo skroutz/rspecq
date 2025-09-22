@@ -173,6 +173,9 @@ module RSpecQ
         )
         return q_size
       end
+
+      puts "I am the master worker (worker_id=#{@worker_id}), publishing the queue..."
+
       RSpec.configuration.files_or_directories_to_run = files_or_dirs_to_run
       files_to_run = RSpec.configuration.files_to_run.map { |j| relative_path(j) }
 
