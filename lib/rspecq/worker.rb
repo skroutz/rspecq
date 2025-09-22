@@ -266,7 +266,7 @@ module RSpecQ
         end
 
         log_event(
-          "Failed to split slow files, falling back to regular scheduling.\n #{err}",
+          "Failed to split slow files, falling back to regular scheduling",
           "error",
           rspec_stdout: rspec_output,
           rspec_stderr: err,
@@ -279,6 +279,16 @@ module RSpecQ
       end
 
       JSON.parse(out)["examples"].map { |e| e["id"] }
+    rescue JSON::ParserError => e
+      log_event(
+        "Failed to parse rspec json output, falling back to regular scheduling",
+        "error",
+        error: e.message,
+        rspec_stdout: out,
+        cmd_result: cmd_result.inspect
+      )
+
+      files
     end
 
     def relative_path(job)
@@ -293,7 +303,7 @@ module RSpecQ
     # Prints msg to standard output and emits an event to Sentry, if the
     # SENTRY_DSN environment variable is set.
     def log_event(msg, level, additional = {})
-      puts msg
+      warn msg
 
       Sentry.capture_message(msg, level: level, extra: {
         build: @build_id,
