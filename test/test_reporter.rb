@@ -9,7 +9,7 @@ class TestReporter < RSpecQTest
     assert_match "Total results", output
     assert_match "1 examples (1 jobs)", output
     assert_match "0 failures", output
-    assert_match "execution time", output
+    assert_match "Spec time", output
     refute_match "Failed examples", output
     refute_match "Flaky", output
   end

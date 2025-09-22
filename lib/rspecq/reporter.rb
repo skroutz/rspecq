@@ -28,7 +28,7 @@ module RSpecQ
       reported_failures = {}
       failure_heading_printed = false
 
-      tests_duration = @timeout.times do
+      @timeout.times do
         @queue.example_failures.each do |job, rspec_output|
           next if reported_failures[job]
 
@@ -52,22 +52,23 @@ module RSpecQ
 
       raise "Build not finished after #{@timeout} seconds" if !finished
 
-      @queue.record_build_time(tests_duration) if tests_duration
+      build_duration = test_durations&.first
+      @queue.record_build_time(build_duration) if build_duration
 
       flaky_jobs = @queue.flaky_jobs
 
       puts summary(@queue.example_failures, @queue.non_example_errors,
         flaky_jobs)
 
-      flaky_jobs_to_sentry(flaky_jobs, tests_duration)
+      flaky_jobs_to_sentry(flaky_jobs, build_duration)
 
       exit 1 if !@queue.build_successful?
     end
 
     private
 
-    def tests_duration
-      @tests_duration ||= @queue.took_time_secs
+    def test_durations
+      @test_durations ||= @queue.took_times_secs
     end
 
     # We try to keep this output consistent with RSpec's original output
@@ -99,8 +100,13 @@ module RSpecQ
                  "#{errors.count} errors"
       summary << "\n\n"
 
-      if tests_duration
-        summary << "Spec execution time: #{humanize_duration(tests_duration)}\n"
+      from_elected_master, from_queue_ready = test_durations
+      if from_elected_master
+        summary << "Spec time (from elected master)\t: #{humanize_duration(from_elected_master)}\n"
+      end
+
+      if from_queue_ready
+        summary << "Spec time (from queue ready)\t: #{humanize_duration(from_queue_ready)}\n"
       end
 
       if @queue.workers_withdrawn.any?

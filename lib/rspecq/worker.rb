@@ -159,6 +159,8 @@ module RSpecQ
     def try_publish_queue!(queue)
       return if !queue.become_master
 
+      queue.mark_elected_master_at
+
       if reproduction
         q_size = queue.publish(files_or_dirs_to_run, fail_fast)
         log_event(
