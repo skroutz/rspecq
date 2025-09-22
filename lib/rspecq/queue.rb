@@ -287,6 +287,12 @@ module RSpecQ
       end.inject(:+).zero?
     end
 
+    # Marks the time a master worker is elected. This is used to measure
+    # the total build time.
+    def mark_elected_master_at
+      @redis.set(key_elected_master_at, current_time)
+    end
+
     # Marks the build as finished by setting the finished_at timestamp.
     #
     # Only the first worker to call this method will succeed, subsequent
@@ -295,14 +301,22 @@ module RSpecQ
       @redis.setnx(key_queue_finished_at, current_time)
     end
 
-    # Returns the seconds that the queue took to complete, or nil if the
-    # queue is not yet finished or has not yet started.
-    def took_time_secs
-      started = @redis.get(key_queue_ready_at)
-      finished = @redis.get(key_queue_finished_at)
-      return nil if started.nil? || finished.nil?
+    # Returns two timings in seconds:
+    # - The seconds that the queue took to complete from the time a master
+    #   worker was elected.
+    # - The seconds that the queue took to complete from the time the queue
+    #   was marked ready (i.e. all jobs where published).
+    def took_times_secs
+      elected_master_at = @redis.get(key_elected_master_at)
+      ready_at = @redis.get(key_queue_ready_at)
+      finished_at = @redis.get(key_queue_finished_at)
 
-      finished.to_i - started.to_i
+      return nil if elected_master_at.nil? || ready_at.nil? || finished_at.nil?
+
+      [
+        finished_at.to_i - elected_master_at.to_i,
+        finished_at.to_i - ready_at.to_i
+      ]
     end
 
     def published?
@@ -389,6 +403,13 @@ module RSpecQ
     # redis: SET<job>
     def key_queue_processed
       key("queue", "processed")
+    end
+
+    # Contains the timestamp of when a master worker was elected
+    #
+    # redis: STRING<timestamp>
+    def key_elected_master_at
+      key("queue", "elected_master_at")
     end
 
     # Contains the timestamp of when the build started
