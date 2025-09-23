@@ -250,6 +250,10 @@ module RSpecQ
       @redis.zadd(key_build_timings, duration, job)
     end
 
+    def job_build_timing(job)
+      @redis.zscore(key_build_timings, job)
+    end
+
     # Persist build timings to the global timings key, so that they can be
     # used for scheduling future builds.
     def update_global_timings(dst = key_timings)
