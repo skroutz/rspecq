@@ -41,7 +41,7 @@ module RSpecQ
         if job then
           redis.call('lpush', queue_unprocessed, job)
           redis.call('hdel', queue_running, worker)
-          return job
+          return {job, worker}
         end
       end
 
