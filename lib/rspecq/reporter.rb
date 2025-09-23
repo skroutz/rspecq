@@ -92,12 +92,15 @@ module RSpecQ
 
       errors.each_value { |msg| summary << msg }
 
+      requeues = @queue.requeued_jobs.values.sum
+
       summary << "\n"
       summary << "Total results:\n"
       summary << "  #{@queue.example_count} examples "     \
                  "(#{@queue.processed_jobs_count} jobs), " \
                  "#{failures.count} failures, "            \
-                 "#{errors.count} errors"
+                 "#{errors.count} errors, "                \
+                 "#{requeues} requeues\n"
       summary << "\n\n"
 
       from_elected_master, from_queue_ready = test_durations
