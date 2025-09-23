@@ -151,7 +151,12 @@ module RSpecQ
         options = ["--format", "progress", job]
         tags.each { |tag| options.push("--tag", tag) }
         opts = RSpec::Core::ConfigurationOptions.new(options)
-        _result = RSpec::Core::Runner.new(opts).run($stderr, $stdout)
+
+        took = measure_duration do
+          _result = RSpec::Core::Runner.new(opts).run($stderr, $stdout)
+        end
+
+        puts "Executed #{job} took=#{took}"
 
         queue.acknowledge_job(job)
       end
@@ -332,6 +337,12 @@ module RSpecQ
         object: inspect,
         pid: Process.pid
       }.merge(additional))
+    end
+
+    def measure_duration
+      start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      yield
+      (Process.clock_gettime(Process::CLOCK_MONOTONIC) - start).round(2)
     end
   end
 end
