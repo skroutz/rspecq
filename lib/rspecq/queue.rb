@@ -265,7 +265,7 @@ module RSpecQ
     end
 
     def requeued_jobs
-      @redis.hgetall(key_requeues)
+      @redis.hgetall(key_requeues).transform_values(&:to_i)
     end
 
     def become_master
