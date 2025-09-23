@@ -112,8 +112,8 @@ module RSpecQ
         return if shutdown?
         return if queue.build_failed_fast?
 
-        lost = queue.requeue_lost_job
-        puts "Requeued lost job: #{lost}" if lost
+        lost, lost_worker = queue.requeue_lost_job
+        puts "Requeued lost job: #{lost} from #{lost_worker}" if lost
 
         # TODO: can we make `reserve_job` also act like exhausted? and get
         # rid of `exhausted?` (i.e. return false if no jobs remain)
