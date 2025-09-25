@@ -1,3 +1,3 @@
 module RSpecQ
-  VERSION = "0.7.2.pre.skr14".freeze
+  VERSION = "0.7.2.pre.skr15".freeze
 end
