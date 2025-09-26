@@ -120,8 +120,9 @@ module RSpecQ
                  "(#{@queue.processed_jobs_count} jobs), " \
                  "#{failures.count} failures, "            \
                  "#{errors.count} errors, "                \
-                 "#{requeues} requeues\n"
-      summary << "\n\n"
+                 "#{requeues} requeues"
+      summary << ", #{@queue.lost_jobs_count} lost jobs (unique)" if @queue.lost_jobs_count.positive?
+      summary << "\n\n\n"
 
       from_elected_master, from_queue_ready = test_durations
       if from_elected_master
