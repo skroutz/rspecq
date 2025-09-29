@@ -30,4 +30,17 @@ class TestQueue < RSpecQTest
 
     assert_equal 2, queue.push_jobs(["job1", "job2"])
   end
+
+  def test_timings_reconstruction
+    queue = RSpecQ::Queue.new(rand_id, rand_id, REDIS_OPTS)
+
+    queue.record_build_timing("foo", 42.0)
+    queue.record_build_timing("foo[1]", 1.0)
+
+    queue.update_global_timings
+
+    global_timings = queue.global_timings
+
+    assert_equal 42.0, global_timings["foo"], "File timing should not be overriden"
+  end
 end
