@@ -4,6 +4,12 @@ require "pp"
 require "open3"
 
 module RSpecQ
+  class QueueStats < Struct.new(:jobs, :files_splitted, :splitted_jobs)
+    def initialize(jobs: 0, files_splitted: 0, splitted_jobs: 0)
+      super
+    end
+  end
+
   # A Worker, given a build ID, continuously consumes tests off the
   # corresponding and executes them, until the queue is empty.
   # It is also responsible for populating the initial queue.
@@ -93,8 +99,9 @@ module RSpecQ
     def work
       puts "Working for build #{@build_id} (worker=#{@worker_id})"
 
-      q_size = try_publish_queue!(queue)
-      puts "Published queue (size=#{q_size})" if q_size
+      if stats = try_publish_queue!(queue)
+        puts "Published queue (size=#{stats.jobs} splitted_jobs=#{stats.splitted_jobs} files_splitted=#{stats.files_splitted})"
+      end
 
       queue.save_worker_seed(@worker_id, seed)
 
@@ -168,6 +175,8 @@ module RSpecQ
     def try_publish_queue!(queue)
       return if !queue.become_master
 
+      stats = QueueStats.new
+
       queue.mark_elected_master_at
 
       if reproduction
@@ -176,7 +185,8 @@ module RSpecQ
           "Reproduction mode. Published queue as given (size=#{q_size})",
           "info"
         )
-        return q_size
+        stats.jobs += q_size
+        return stats
       end
 
       puts "I am the master worker (worker_id=#{@worker_id}), publishing the queue..."
@@ -190,7 +200,8 @@ module RSpecQ
           "No global timings found! Published queue in random order (size=#{q_size})",
           "warning"
         )
-        return q_size
+        stats.jobs += q_size
+        return stats
       end
 
       # prepare jobs to run
@@ -203,8 +214,11 @@ module RSpecQ
       end
 
       if slow_files.empty?
-        return queue.push_jobs(order_jobs_by_timings(files_to_run), fail_fast)
+        stats.jobs += queue.push_jobs(order_jobs_by_timings(files_to_run), fail_fast)
+        return stats
       end
+
+      stats.files_splitted = slow_files.size
 
       jobs = order_jobs_by_timings(files_to_run - slow_files)
       pending = []
@@ -217,12 +231,17 @@ module RSpecQ
         pending = rest
       end
 
-      queue.push_jobs(jobs, fail_fast, publish: false)
+      stats.jobs += queue.push_jobs(jobs, fail_fast, publish: false)
 
       # Populate splitted slow files
-      pending += files_to_example_ids(slow_files)
+      splitted_examples = files_to_example_ids(slow_files)
 
-      queue.push_jobs(order_jobs_by_timings(pending), fail_fast)
+      pending += splitted_examples
+      stats.splitted_jobs = splitted_examples.size
+
+      stats.jobs += queue.push_jobs(order_jobs_by_timings(pending), fail_fast)
+
+      stats
     end
 
     private
