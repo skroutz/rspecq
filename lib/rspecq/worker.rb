@@ -98,6 +98,13 @@ module RSpecQ
 
       queue.save_worker_seed(@worker_id, seed)
 
+      # Use `--seed` to deterministically reproduce test failures
+      # related to randomization by passing the same `--seed` value
+      # as the one that triggered the failure.
+      #
+      # We also use the same seed to feed Rspec's `--seed` option.
+      Kernel.srand(seed)
+
       loop do
         # we have to bootstrap this so that it can be used in the first call
         # to `requeue_lost_job` inside the work loop

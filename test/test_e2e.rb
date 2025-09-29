@@ -166,6 +166,18 @@ class TestEndToEnd < RSpecQTest
     assert_includes [2, 3], queue.processed_jobs.length
   end
 
+  def test_seed_reproducability
+    initial_outcome = nil
+
+    3.times do |i|
+      queue = exec_build("random_failing", " --max-requeues 0 --seed 1234", build_id: "run-#{i}")
+      outcome = queue.build_successful?
+      initial_outcome ||= outcome
+
+      assert_equal outcome, initial_outcome, "the outcome should be the same for the same seed"
+    end
+  end
+
   def test_graceful_shutdown
     pid, queue = start_worker("rescue_exception",
      "--max-requeues=0 --graceful_shutdown_timeout=5")
