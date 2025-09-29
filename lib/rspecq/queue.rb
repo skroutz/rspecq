@@ -205,6 +205,10 @@ module RSpecQ
       @redis.hset(key("worker_seed"), worker, seed)
     end
 
+    def store_info(info)
+      @redis.hset(key("info"), info)
+    end
+
     def worker_heartbeats
       @redis.zrange(key_worker_heartbeats, 0, -1, withscores: true).to_h
     end
