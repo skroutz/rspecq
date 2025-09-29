@@ -302,8 +302,10 @@ module RSpecQ
       whole_file_timings = populate_splitted_file_timings(redis_timings)
       return redis_timings if whole_file_timings.empty?
 
-      redis_timings.merge!(whole_file_timings)
-      redis_timings.sort_by { |_j, d| -d }.to_h
+      # Make sure that redis_timings overrides whole_file_timings in case
+      # there are any duplicates
+      whole_file_timings.merge!(redis_timings)
+      whole_file_timings.sort_by { |_j, d| -d }.to_h
     end
 
     # ordered by execution time desc (slowest are in the head)
