@@ -4,9 +4,14 @@ require "pp"
 require "open3"
 
 module RSpecQ
-  class QueueStats < Struct.new(:jobs, :files_splitted, :splitted_jobs)
-    def initialize(jobs: 0, files_splitted: 0, splitted_jobs: 0)
-      super
+  STATS = %i[jobs files_splitted splitted_jobs untimed_jobs untimed_splitted_jobs].freeze
+  QueueStats = Struct.new(*STATS) do
+    def initialize
+      super(0, 0, 0, 0, 0)
+    end
+
+    def to_s
+      STATS.map { |s| "#{s}=#{self[s]}" }.join(" ")
     end
   end
 
@@ -99,8 +104,8 @@ module RSpecQ
     def work
       puts "Working for build #{@build_id} (worker=#{@worker_id})"
 
-      if stats = try_publish_queue!(queue)
-        puts "Published queue (size=#{stats.jobs} splitted_jobs=#{stats.splitted_jobs} files_splitted=#{stats.files_splitted})"
+      if (stats = try_publish_queue!(queue)) # Master
+        puts "Published queue (#{stats})"
       end
 
       queue.save_worker_seed(@worker_id, seed)
@@ -214,13 +219,17 @@ module RSpecQ
       end
 
       if slow_files.empty?
-        stats.jobs += queue.push_jobs(order_jobs_by_timings(files_to_run), fail_fast)
+        jobs, untimed_count = order_jobs_by_timings(files_to_run)
+        stats.jobs += queue.push_jobs(jobs, fail_fast)
+        stats.untimed_jobs += untimed_count
+
         return stats
       end
 
       stats.files_splitted = slow_files.size
 
-      jobs = order_jobs_by_timings(files_to_run - slow_files)
+      jobs, untimed_count = order_jobs_by_timings(files_to_run - slow_files)
+      stats.untimed_jobs = untimed_count
       pending = []
 
       # Push non-slow files first to make sure that workers can start working
@@ -239,7 +248,11 @@ module RSpecQ
       pending += splitted_examples
       stats.splitted_jobs = splitted_examples.size
 
-      stats.jobs += queue.push_jobs(order_jobs_by_timings(pending), fail_fast)
+      pending, untimed_count = order_jobs_by_timings(pending)
+      stats.jobs += queue.push_jobs(pending, fail_fast)
+
+      stats.untimed_splitted_jobs += untimed_count
+      stats.untimed_jobs += untimed_count
 
       stats
     end
@@ -248,11 +261,15 @@ module RSpecQ
 
     def order_jobs_by_timings(jobs)
       timings = global_timings
+      untimed_count = 0
 
       default_timing = timings.values[timings.values.size / 2]
 
       jobs = jobs.each_with_object({}) do |j, h|
-        puts "Untimed job: #{j}" if timings[j].nil?
+        if timings[j].nil?
+          puts "Untimed job=#{j}"
+          untimed_count += 1
+        end
 
         # HEURISTIC: put jobs without previous timings (e.g. a newly added
         # spec file) in the middle of the queue
@@ -260,7 +277,7 @@ module RSpecQ
       end
 
       # sort jobs based on their timings (slowest to be processed first)
-      jobs.sort_by { |_j, t| -t }.map(&:first)
+      [jobs.sort_by { |_j, t| -t }.map(&:first), untimed_count]
     end
 
     def reset_rspec_state!
