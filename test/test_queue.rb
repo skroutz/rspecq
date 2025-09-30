@@ -43,4 +43,26 @@ class TestQueue < RSpecQTest
 
     assert_equal 42.0, global_timings["foo"], "File timing should not be overriden"
   end
+
+  def test_default_timing
+    queue = RSpecQ::Queue.new(rand_id, rand_id, REDIS_OPTS)
+
+    # Record file timings
+    queue.record_build_timing("foo", 100.0)
+    queue.record_build_timing("bar", 200.0)
+    queue.record_build_timing("baz", 300.0)
+
+    # Record individual example timings
+    queue.record_build_timing("foo[1]", 1.0)
+    queue.record_build_timing("foo[2]", 2.0)
+    queue.record_build_timing("bar[1]", 3.0)
+    queue.record_build_timing("bar[2]", 4.0)
+    queue.record_build_timing("baz[1]", 5.0)
+    queue.record_build_timing("baz[2]", 6.0)
+
+    queue.update_global_timings
+
+    worker = new_worker("not-existing")
+    assert_equal 200, worker.default_timing, "Default timing should be the median of file timings, not example timings"
+  end
 end

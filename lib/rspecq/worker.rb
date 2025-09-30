@@ -232,12 +232,18 @@ module RSpecQ
       queue.push_jobs(order_jobs_by_timings(pending), fail_fast)
     end
 
+    def default_timing
+      @default_timing ||= begin
+        clean_timings = global_timings.reject { |j, _t| j.include?("[") }
+
+        clean_timings.values[clean_timings.values.size / 2]
+      end
+    end
+
     private
 
     def order_jobs_by_timings(jobs)
       timings = global_timings
-
-      default_timing = timings.values[timings.values.size / 2]
 
       jobs = jobs.each_with_object({}) do |j, h|
         puts "Untimed job: #{j}" if timings[j].nil?
