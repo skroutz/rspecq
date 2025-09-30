@@ -121,6 +121,8 @@ module RSpecQ
                  "#{failures.count} failures, "            \
                  "#{errors.count} errors, "                \
                  "#{requeues} requeues"
+      summary << ", #{flaky_jobs.count} flaky" if flaky_jobs.any?
+      summary << ", #{@queue.workers.withdrawn.count} withdrawals" if @queue.workers_withdrawn.any?
       summary << ", #{@queue.lost_jobs_count} lost jobs (unique)" if @queue.lost_jobs_count.positive?
       summary << "\n\n\n"
 
