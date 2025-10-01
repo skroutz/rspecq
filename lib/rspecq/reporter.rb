@@ -147,8 +147,13 @@ module RSpecQ
         summary << "\n\n"
         summary << "Flaky jobs detected (count=#{flaky_jobs.count}):\n"
         flaky_jobs.each do |j|
+          job_timing = if (jt = @queue.job_build_timing(j))
+                         humanize_duration(jt.to_i)
+                       else
+                         "---"
+                       end
           summary << RSpec::Core::Formatters::ConsoleCodes.wrap(
-            "#{@queue.job_location(j)} @ #{@queue.failed_job_worker(j)}\n",
+            "#{@queue.job_location(j)} @ #{@queue.failed_job_worker(j)} timing=#{job_timing}\n",
             RSpec.configuration.pending_color
           )
 
