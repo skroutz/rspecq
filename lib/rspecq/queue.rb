@@ -98,6 +98,8 @@ module RSpecQ
 
     STATUS_INITIALIZING = "initializing".freeze
     STATUS_READY = "ready".freeze
+    STATUS_SUCCESS = "success".freeze
+    STATUS_FAILURE = "failure".freeze
 
     attr_reader :redis, :build_id, :worker_id
 
@@ -106,6 +108,10 @@ module RSpecQ
       @worker_id = worker_id
       @redis = Redis.new(redis_opts.merge(id: worker_id))
       @script_shas = {}
+    end
+
+    def status
+      @redis.get(key_queue_status)
     end
 
     # NOTE: jobs will be processed from head to tail (lpop)
@@ -337,12 +343,80 @@ module RSpecQ
       @redis.set(key_elected_master_at, current_time)
     end
 
-    # Marks the build as finished by setting the finished_at timestamp.
+    TRY_MARK_FINISHED = <<~LUA.freeze
+      local key_queue_finished_at = KEYS[1]
+      local key_queue_status = KEYS[2]
+      local key_failures = KEYS[3]
+      local key_errors = KEYS[4]
+      local key_queue_unprocessed = KEYS[5]
+      local key_queue_running = KEYS[6]
+      local key_queue_config = KEYS[7]
+      local status_success = ARGV[1]
+      local status_failure = ARGV[2]
+
+      -- Collect data to determine if we should finish
+      local unprocessed_count = redis.call('llen', key_queue_unprocessed)
+      local running_count = redis.call('hlen', key_queue_running)
+      local failures_count = redis.call('hlen', key_failures)
+      local errors_count = redis.call('hlen', key_errors)
+      local fail_fast = tonumber(redis.call('hget', key_queue_config, 'fail_fast'))
+
+      -- Check if build failed fast (failures exceeded threshold)
+      local is_fail_fast = fail_fast and fail_fast > 0 and failures_count + errors_count >= fail_fast
+
+      -- Check if exhausted
+      local is_exhausted = unprocessed_count + running_count == 0
+
+      -- If neither condition is met, don't finish
+      if not is_fail_fast and not is_exhausted then
+        return nil
+      end
+
+      -- Get current time from Redis
+      local current_time = redis.call('time')[1]
+
+      -- Try to acquire the lock by setting finished_at
+      local locked = redis.call('setnx', key_queue_finished_at, current_time)
+      if locked == 0 then
+        return nil  -- Another worker already finished
+      end
+
+      -- Set final status based on the condition that triggered finish
+      if is_fail_fast then
+        redis.call('set', key_queue_status, status_failure)
+      elseif failures_count + errors_count == 0 then
+        redis.call('set', key_queue_status, status_success)
+      else
+        redis.call('set', key_queue_status, status_failure)
+      end
+
+      return true
+    LUA
+
+    # Marks the build as finished by setting the finished_at timestamp and
+    # sets the final build status (success, failure).
     #
-    # Only the first worker to call this method will succeed, subsequent
-    # calls will not overwrite the timestamp.
+    # The method defensively (re-)checks if the build is indeed over before
+    # marking it as finished.
+    #
+    # Only the first worker to call this method will succeed
     def try_mark_finished
-      @redis.setnx(key_queue_finished_at, current_time)
+      eval_script(
+        TRY_MARK_FINISHED,
+        keys: [
+          key_queue_finished_at,
+          key_queue_status,
+          key_failures,
+          key_errors,
+          key_queue_unprocessed,
+          key_queue_running,
+          key_queue_config
+        ],
+        argv: [
+          STATUS_SUCCESS,
+          STATUS_FAILURE
+        ]
+      )
     end
 
     # Returns two timings in seconds:
@@ -364,7 +438,7 @@ module RSpecQ
     end
 
     def published?
-      @redis.get(key_queue_status) == STATUS_READY
+      [STATUS_READY, STATUS_SUCCESS, STATUS_FAILURE].include?(@redis.get(key_queue_status))
     end
 
     def wait_until_published(timeout = 30)
