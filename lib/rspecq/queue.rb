@@ -257,7 +257,14 @@ module RSpecQ
     end
 
     def record_build_timing(job, duration)
-      @redis.zadd(key_build_timings, duration, job)
+      @redis.pipelined do |pipeline|
+        pipeline.zadd(key_build_timings, duration, job)
+        pipeline.incrby(key_build_execution_time_ms, (duration * 1000).to_i)
+      end
+    end
+
+    def total_execution_time_ms
+      Integer(@redis.get(key_build_execution_time_ms) || 0)
     end
 
     def job_build_timing(job)
@@ -622,6 +629,13 @@ module RSpecQ
 
     def key_build_timings
       key("timings")
+    end
+
+    # redis: STRING<ms>
+    #
+    # Total build execution time in milliseconds
+    def key_build_execution_time_ms
+      key("build_execution_time_ms")
     end
 
     # redis: LIST<duration>
