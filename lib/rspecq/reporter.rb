@@ -135,6 +135,8 @@ module RSpecQ
         summary << "Spec time (from queue ready)\t: #{humanize_duration(from_queue_ready)}\n"
       end
 
+      summary << "Worker total execution time\t: #{humanize_duration(@queue.total_execution_time_ms / 1000)}\n"
+
       if @queue.workers_withdrawn.any?
         summary << "\n"
         summary << "Workers withdrawn (count=#{@queue.workers_withdrawn.count}):\n"
