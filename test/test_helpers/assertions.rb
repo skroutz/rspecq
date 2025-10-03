@@ -11,6 +11,7 @@ module TestHelpers
       failed_fast = queue.build_failed_fast?
       exhausted = queue.exhausted?
       assert(failed_fast || exhausted)
+      assert_includes [RSpecQ::Queue::STATUS_SUCCESS, RSpecQ::Queue::STATUS_FAILURE], queue.status
 
       if exhausted
         from_elected_master, from_queue_ready = queue.took_times_secs
