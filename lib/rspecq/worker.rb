@@ -111,7 +111,11 @@ module RSpecQ
         update_heartbeat
 
         return if shutdown?
-        return if queue.build_failed_fast?
+
+        if queue.build_failed_fast?
+          queue.try_mark_finished # build is finished
+          return
+        end
 
         lost, lost_worker = queue.requeue_lost_job
         puts "Requeued lost job: #{lost} from #{lost_worker}" if lost
