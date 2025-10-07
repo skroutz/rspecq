@@ -22,6 +22,15 @@ class TestQueue < RSpecQTest
        "./spec/legit_failure_spec.rb[1:3]"], queue
     )
 
+    assert_equal 3, queue.flaky_failures.size # legit failure + 2 flakes
+
+    assert_equal [
+      "./spec/flaky_spec.rb[1:1]",
+      "./spec/flaky_spec.rb[1:3]",
+      "./spec/legit_failure_spec.rb[1:3]"
+      ],
+      queue.flaky_failures.keys.sort
+
     assert_failures(["./spec/legit_failure_spec.rb[1:3]"], queue)
   end
 
