@@ -148,15 +148,17 @@ module RSpecQ
         RSpec.configuration.add_formatter(Formatters::FailureRecorder.new(queue, job, max_requeues, @worker_id))
         RSpec.configuration.add_formatter(Formatters::ExampleCountRecorder.new(queue))
         RSpec.configuration.add_formatter(Formatters::WorkerHeartbeatRecorder.new(self))
-        RSpec.configuration.add_formatter(Formatters::JobTimingRecorder.new(queue, job))
+        jt = Formatters::JobTimingRecorder.new(queue, job)
+        RSpec.configuration.add_formatter(jt)
 
         options = ["--format", "progress", job]
         tags.each { |tag| options.push("--tag", tag) }
         opts = RSpec::Core::ConfigurationOptions.new(options)
 
-        took = measure_duration do
-          _result = RSpec::Core::Runner.new(opts).run($stderr, $stdout)
-        end
+        _result = RSpec::Core::Runner.new(opts).run($stderr, $stdout)
+
+        took = "---"
+        took = jt.summary.duration.round(2) if jt.summary
 
         puts "Executed #{job} took=#{took}"
 
@@ -347,12 +349,6 @@ module RSpecQ
         object: inspect,
         pid: Process.pid
       }.merge(additional))
-    end
-
-    def measure_duration
-      start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-      yield
-      (Process.clock_gettime(Process::CLOCK_MONOTONIC) - start).round(2)
     end
   end
 end
