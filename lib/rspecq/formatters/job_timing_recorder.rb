@@ -11,6 +11,7 @@ module RSpecQ
 
       def dump_summary(summary)
         @queue.record_build_timing(@job, Float(summary.duration))
+        @queue.record_build_load_timing(@job, Float(summary.load_time))
       end
     end
   end
