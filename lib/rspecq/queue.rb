@@ -275,6 +275,13 @@ module RSpecQ
       @redis.zadd(key_build_splitted_timings, scores)
     end
 
+    def record_build_load_timing(job, duration)
+      @redis.pipelined do |pipeline|
+        pipeline.zadd(key_build_load_timings, duration, job)
+        pipeline.incrby(key_build_load_time_ms, (duration * 1000).to_i)
+      end
+    end
+
     def total_execution_time_ms
       Integer(@redis.get(key_build_execution_time_ms) || 0)
     end
@@ -303,8 +310,11 @@ module RSpecQ
         return false
       end
 
+      dst_load = dst.sub(key_timings, key_load_timings)
+
       r = @redis.multi do |pipeline|
         pipeline.copy(key_build_timings, dst, replace: true)
+        pipeline.copy(key_build_load_timings, dst_load, replace: true)
       end
 
       !r.nil? # Transaction succeeded?
@@ -699,8 +709,16 @@ module RSpecQ
       "timings"
     end
 
+    def key_load_timings
+      "load-timings"
+    end
+
     def key_build_timings
       key("timings")
+    end
+
+    def key_build_load_timings
+      key("load-timings")
     end
 
     # redis: STRING<ms>
@@ -714,6 +732,13 @@ module RSpecQ
     #
     def key_build_splitted_timings
       key("build_splitted_timings")
+    end
+
+    # redis: STRING<ms>
+    #
+    # Total build load time in milliseconds
+    def key_build_load_time_ms
+      key("build_load_time_ms")
     end
 
     # redis: LIST<duration>
