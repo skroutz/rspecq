@@ -72,6 +72,6 @@ class TestQueue < RSpecQTest
     queue.update_global_timings
 
     worker = new_worker("not-existing")
-    assert_equal 200, worker.default_timing, "Default timing should be the median of file timings, not example timings"
+    assert_equal 300, worker.default_timing, "Default timing should be the max timing"
   end
 end

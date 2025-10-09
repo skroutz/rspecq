@@ -56,7 +56,7 @@ class TestScheduling < RSpecQTest
     ], worker.queue.unprocessed_jobs
   end
 
-  def test_untimed_jobs_scheduled_in_the_middle
+  def test_untimed_jobs_scheduled_position
     worker = new_worker("scheduling_untimed/spec/foo")
     silent { worker.work }
     worker.queue.update_global_timings
@@ -68,9 +68,9 @@ class TestScheduling < RSpecQTest
     worker = new_worker("scheduling_untimed")
     silent { worker.try_publish_queue!(worker.queue) }
     assert_equal [
+      "./test/sample_suites/scheduling_untimed/spec/bar/untimed_spec.rb",
       "./test/sample_suites/scheduling_untimed/spec/foo/bar_spec.rb",
       "./test/sample_suites/scheduling_untimed/spec/foo/foo_spec.rb",
-      "./test/sample_suites/scheduling_untimed/spec/bar/untimed_spec.rb",
       "./test/sample_suites/scheduling_untimed/spec/foo/zxc_spec.rb",
       "./test/sample_suites/scheduling_untimed/spec/foo/baz_spec.rb",
     ], worker.queue.unprocessed_jobs
