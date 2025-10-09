@@ -158,9 +158,13 @@ module RSpecQ
         _result = RSpec::Core::Runner.new(opts).run($stderr, $stdout)
 
         took = "---"
-        took = jt.summary.duration.round(2) if jt.summary
+        load_time = "---"
+        if jt.summary
+          took = jt.summary.duration.round(2)
+          load_time = jt.summary.load_time.round(2)
+        end
 
-        puts "Executed #{job} took=#{took}"
+        puts "Executed #{job} took=#{took} load-time=#{load_time}"
 
         queue.acknowledge_job(job)
       end
