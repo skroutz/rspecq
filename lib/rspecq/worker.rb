@@ -237,11 +237,7 @@ module RSpecQ
     end
 
     def default_timing
-      @default_timing ||= begin
-        clean_timings = global_timings.reject { |j, _t| j.include?("[") }
-
-        clean_timings.values[clean_timings.values.size / 2]
-      end
+      @default_timing ||= clean_timings = global_timings.first.last
     end
 
     private
@@ -253,7 +249,7 @@ module RSpecQ
         puts "Untimed job: #{j}" if timings[j].nil?
 
         # HEURISTIC: put jobs without previous timings (e.g. a newly added
-        # spec file) in the middle of the queue
+        # spec file) in the top of the queue
         h[j] = timings[j] || default_timing
       end
 
