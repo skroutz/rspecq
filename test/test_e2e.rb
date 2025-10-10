@@ -142,7 +142,9 @@ class TestEndToEnd < RSpecQTest
     queue = exec_build("spec_file_splitting", "--file-split-threshold 1")
 
     assert queue.build_successful?
-    refute_empty queue.build_timings
+    refute_empty queue.build_splitted_timings
+    assert queue.build_splitted_timings["./spec/slow_spec.rb"]
+
     assert_processed_jobs([
       "./spec/slow_spec.rb[1:2:1]",
       "./spec/slow_spec.rb[1:1]",

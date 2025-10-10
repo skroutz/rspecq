@@ -13,6 +13,9 @@ module RSpecQ
   # - previous job timing statistics used to optimally schedule the jobs
   # - the set of executed jobs
   class Queue
+    # Max slow timings to store in splitted timings key (debugging)
+    MAX_SPLITTED_TIMINGS = 50
+
     RESERVE_JOB = <<~LUA.freeze
       local queue = KEYS[1]
       local queue_running = KEYS[2]
@@ -267,6 +270,11 @@ module RSpecQ
       end
     end
 
+    def record_build_splitted_timings(splitted_timings)
+      scores = splitted_timings.take(MAX_SPLITTED_TIMINGS).map { |j, score| [score, j] }
+      @redis.zadd(key_build_splitted_timings, scores)
+    end
+
     def total_execution_time_ms
       Integer(@redis.get(key_build_execution_time_ms) || 0)
     end
@@ -336,6 +344,11 @@ module RSpecQ
     # ordered by execution time desc (slowest are in the head)
     def build_timings
       @redis.zrevrange(key_build_timings, 0, -1, withscores: true).to_h
+    end
+
+  # slowest splitted timings for this build
+    def build_splitted_timings
+      @redis.zrevrange(key_build_splitted_timings, 0, -1, withscores: true).to_h
     end
 
     def example_failures
@@ -640,6 +653,12 @@ module RSpecQ
     # Total build execution time in milliseconds
     def key_build_execution_time_ms
       key("build_execution_time_ms")
+    end
+
+    # redis: ZSET<job => duration>
+    #
+    def key_build_splitted_timings
+      key("build_splitted_timings")
     end
 
     # redis: LIST<duration>
