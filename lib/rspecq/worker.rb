@@ -276,6 +276,9 @@ module RSpecQ
 
       stats.jobs += queue.push_jobs(jobs, fail_fast, publish: false)
 
+      splitted_timings = global_timings.slice(*slow_files)
+      queue.record_build_splitted_timings(splitted_timings)
+
       # Populate splitted slow files
       splitted_examples = files_to_example_ids(slow_files)
 
