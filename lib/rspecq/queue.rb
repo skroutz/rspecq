@@ -286,7 +286,26 @@ module RSpecQ
     # Persist build timings to the global timings key, so that they can be
     # used for scheduling future builds.
     def update_global_timings(dst = key_timings)
+      build_sig, card, first_score, last_score = signature_attrs
+      current_sig = generate_global_timings_sig(card, first_score, last_score)
+
+      return false if current_sig != build_sig
+
       @redis.copy(key_build_timings, dst, replace: true)
+
+      true
+    end
+
+    def signature_attrs
+      current_sig, card, first, last = @redis.pipelined do |pipeline|
+        pipeline.get(key("global_timings_sig").to_s)
+        pipeline.zcard(key_timings)
+        pipeline.zrevrange(key_timings, 0, 0, withscores: true)
+        pipeline.zrevrange(key_timings, -1, -1, withscores: true)
+      end
+
+      # zrange returns an array of a single [job, score] pair
+      [current_sig, card, first&.first&.last, last&.first&.last]
     end
 
     def record_build_time(duration)
@@ -325,8 +344,22 @@ module RSpecQ
     end
 
     # ordered by execution time desc (slowest are in the head)
-    def global_timings
-      redis_timings = @redis.zrevrange(key_timings, 0, -1, withscores: true).to_h
+    def global_timings(update_sig: false)
+      redis_timings = @redis.zrevrange(key_timings, 0, -1, withscores: true)
+
+      # Store a signature of the global timings for this build, so that we can
+      # make sure that we don't update timings if they changed while the build
+      # was running.
+      if update_sig
+        global_timings_sig = generate_global_timings_sig(
+          redis_timings.size,
+          redis_timings.first&.last,
+          redis_timings.last&.last
+        )
+        store_global_timings_sig(global_timings_sig)
+      end
+
+      redis_timings = redis_timings.to_h
 
       # Populate timings for whole files that were split into individual
       # examples, by summing up the timings of their individual parts.
@@ -339,6 +372,14 @@ module RSpecQ
       # there are any duplicates
       whole_file_timings.merge!(redis_timings)
       whole_file_timings.sort_by { |_j, d| -d }.to_h
+    end
+
+    def generate_global_timings_sig(card, first_score, last_score)
+      "card:#{card}|f:#{first_score}|l:#{last_score}"
+    end
+
+    def store_global_timings_sig(sig)
+      @redis.set(key("global_timings_sig"), sig)
     end
 
     # ordered by execution time desc (slowest are in the head)

@@ -208,7 +208,7 @@ module RSpecQ
     end
 
     def global_timings
-      @global_timings ||= queue.global_timings
+      @global_timings ||= queue.global_timings(update_sig: true)
     end
 
     def try_publish_queue!(queue)
