@@ -65,14 +65,19 @@ module RSpecQ
       build_duration = test_durations&.first
       @queue.record_build_time(build_duration) if build_duration
 
+      updated = false
       if update_timings && @queue.build_successful?
-        if @timings_key
-          puts "Updating job timings @ #{@timings_key}"
-          @queue.update_global_timings(@timings_key)
-        else
-          puts "Updating global job timings"
-          @queue.update_global_timings
-        end
+        updated = if @timings_key
+                    @queue.update_global_timings(@timings_key)
+                  else
+                    @queue.update_global_timings
+                  end
+      end
+
+      if updated
+        msg = "Updated global job timings"
+        msg << " @ #{@timings_key}" if @timings_key
+        puts msg
       end
 
       flaky_jobs = @queue.flaky_jobs

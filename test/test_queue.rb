@@ -46,10 +46,13 @@ class TestQueue < RSpecQTest
     queue.record_build_timing("foo", 42.0)
     queue.record_build_timing("foo[1]", 1.0)
 
-    queue.update_global_timings
+    # Force signature calculation (usually happens in a new test run)
+    queue.global_timings(update_sig: true)
+
+    # Update global timings usually happens in the reporter
+    assert queue.update_global_timings
 
     global_timings = queue.global_timings
-
     assert_equal 42.0, global_timings["foo"], "File timing should not be overriden"
   end
 
@@ -69,9 +72,34 @@ class TestQueue < RSpecQTest
     queue.record_build_timing("baz[1]", 5.0)
     queue.record_build_timing("baz[2]", 6.0)
 
-    queue.update_global_timings
+    # Force signature calculation (usually happens in a new test run)
+    queue.global_timings(update_sig: true)
+    assert queue.update_global_timings
 
     worker = new_worker("not-existing")
     assert_equal 300, worker.default_timing, "Default timing should be the max timing"
+  end
+
+  # signature is computed in two distict flow,
+  # The master worker flow, when the sig is generated
+  # and the reporter flow, when the sig is checked before updating timings
+  #
+  # We test that those two signatures match
+  def test_signature_check
+    # 1. Setup global timings
+    queue = RSpecQ::Queue.new(rand_id, rand_id, REDIS_OPTS)
+    queue.record_build_timing("foo", 100.0)
+    queue.record_build_timing("bar", 200.0)
+    queue.global_timings(update_sig: true)
+    assert queue.update_global_timings
+
+    # Setup a second run that will check the signature
+    queue2 = RSpecQ::Queue.new(rand_id, rand_id, REDIS_OPTS)
+    queue2.global_timings(update_sig: true)
+
+    # Inject a change in global timings to invalidate the signature
+    queue2.redis.zadd(queue2.key_timings, 300.0, "baz")
+
+    refute queue2.update_global_timings
   end
 end

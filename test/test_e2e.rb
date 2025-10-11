@@ -125,6 +125,21 @@ class TestEndToEnd < RSpecQTest
     ], queue.global_timings.sort_by { |_, v| v }.map(&:first)
   end
 
+  def test_global_timings_update_atomic_only
+    queue = exec_build("timings")
+
+    # Inject a score in global timings to trigger invalidation
+    queue.redis.zadd(queue.key_timings, 42, "nx.rb")
+
+    prev = queue.global_timings
+
+    exec_reporter("--update-timings", build_id: queue.build_id)
+
+    assert queue.build_successful?
+
+    assert_equal prev, queue.global_timings
+  end
+
   def test_timings_no_update
     queue = exec_build("timings")
 
