@@ -285,15 +285,29 @@ module RSpecQ
 
     # Persist build timings to the global timings key, so that they can be
     # used for scheduling future builds.
+    #
+    # We use redis optimistic locking (WATCH/MULTI/EXEC) to make sure that
+    # there is an no (highly unlikely) race between two reporters trying to update the
+    # global timings at the same time.
+    #
+    # See
+    # https://redis.io/docs/latest/develop/using-commands/transactions/#optimistic-locking-using-check-and-set
     def update_global_timings(dst = key_timings)
+      @redis.watch(key_timings) # The upcoming transaction will fail if key_timings changes
+
       build_sig, card, first_score, last_score = signature_attrs
       current_sig = generate_global_timings_sig(card, first_score, last_score)
 
-      return false if current_sig != build_sig
+      if current_sig != build_sig
+        @redis.unwatch
+        return false
+      end
 
-      @redis.copy(key_build_timings, dst, replace: true)
+      r = @redis.multi do |pipeline|
+        pipeline.copy(key_build_timings, dst, replace: true)
+      end
 
-      true
+      !r.nil? # Transaction succeeded?
     end
 
     def signature_attrs
