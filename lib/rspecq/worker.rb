@@ -87,7 +87,10 @@ module RSpecQ
     end
 
     def shutdown?
-      @shutdown_pipe&.ready?
+      return false if @shutdown_pipe.nil?
+
+      # returns :wait_readable if the supervisor has not signaled shutdown (closed the writer)
+      @shutdown_pipe.read_nonblock(1, exception: false).nil?
     end
 
     def work

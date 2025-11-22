@@ -20,17 +20,17 @@ jobs:
         rspec-core-version:
           - 3.11.0
           - 3.12.3
-          - 3.13.5
+          - 3.13.6
         include:
           - redis-version: 7
             ruby-version: '3.4'
-            rspec-core-version: 3.13.5
+            rspec-core-version: 3.13.6
           - redis-version: 6
             ruby-version: '4.0.0-preview2'
-            rspec-core-version: 3.13.5
+            rspec-core-version: 3.13.6
           - redis-version: 6
             ruby-version: '3.3'   # Quoted in order to stringify to '3.0', not '3'.
-            rspec-core-version: 3.13.5
+            rspec-core-version: 3.13.6
 
     services:
       redis:
@@ -41,7 +41,7 @@ jobs:
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
 
-      - uses: ruby/setup-ruby@44511735964dcb71245e7e55f72539531f7bc0eb # v1
+      - uses: ruby/setup-ruby@8aeb6ff8030dd539317f8e1769a044873b56ea71 # v1
         env:
           RSPEC_CORE: ${{ matrix.rspec-core-version }}
         with:
