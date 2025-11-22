@@ -20,17 +20,17 @@ jobs:
         rspec-core-version:
           - 3.11.0
           - 3.12.3
-          - 3.13.5
+          - 3.13.6
         include:
           - redis-version: 7
             ruby-version: '3.4'
-            rspec-core-version: 3.13.5
+            rspec-core-version: 3.13.6
           - redis-version: 6
             ruby-version: '4.0.0-preview2'
-            rspec-core-version: 3.13.5
+            rspec-core-version: 3.13.6
           - redis-version: 6
             ruby-version: '3.3'   # Quoted in order to stringify to '3.0', not '3'.
-            rspec-core-version: 3.13.5
+            rspec-core-version: 3.13.6
 
     services:
       redis:
