@@ -210,7 +210,7 @@ module RSpecQ
           spec_sha: sha
         }
 
-        Raven.capture_message(
+        Sentry.capture_message(
           event_message,
           level: "warning",
           extra: extra,
