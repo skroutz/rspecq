@@ -214,7 +214,8 @@ module RSpecQ
           event_message,
           level: "warning",
           extra: extra,
-          tags: tags
+          tags: tags,
+          fingerprint: [sha]
         )
       end
     end
